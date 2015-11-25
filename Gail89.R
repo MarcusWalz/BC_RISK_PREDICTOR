@@ -47,6 +47,48 @@ seer               = c( 1.3,  8.0, 28.8,  54.7, 109.2, 173.3, 198.8, 221.5,  278
 F                  = append(rep(0.5229, 6), rep(0.5264, 6))
 
 gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc), F)
+
+Gail89 = 
+  list( hazards = gail89
+      , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
+      )
+
+gail_algorithm = function(avatars, years=c(5,10,15), fit = Gail89, aux_rr=NA) {
+  if(!is.na(aux_rr)) {
+    if(is.function(aux_rr)) {
+      aux_rr = aux_rr(avatars)
+    } else if(length(aux_rr) == nrow(avatars)) {
+      aux_rr= aux_rr
+    } else {
+      stop("aux_rr invalid")
+    }
+  } else {
+    aux_rr = 1;
+  }
+  # calculate the relative risks 
+  relative_risks = gail_rr(avatars, fit) * aux_rr 
+
+  absolute_risks=t(apply(cbind(avatars, relative_risks), 1,
+    function(avatar) {
+      avatar = data.frame(t(avatar))
+      my_fit = ifelse(is.function(fit), fit(avatar), fit)
+      my_fit = fit
+      print("~~~~~~~~~~~")
+      print(my_fit$hazards)
+      relative_risk_to_absolute_risk(
+        avatar$AGE
+      , years
+      , avatar$RR_LT_50
+      , avatar$RR_GTE_50
+      , my_fit$hazards) 
+    }
+  ))
+  colnames(absolute_risks) = paste(years, "year AR")
+
+  cbind(relative_risks, absolute_risks)
+
+}
+
 print(gail89)
 
 # Data is published to fit several races.
@@ -78,59 +120,94 @@ get_constants_by_demographic = function(avatar, original_gail=T) {
   }
 }
 
+gail_avatars = function(avatars) {
+  # Convert to gail format. 
 
-Gail89_LPM1 = function(avatar, fileSelect=FALSE){
-  cof = c(-0.74948, 0.09401,  0.52926, 0.21863
-          , 0.95830, 0.01081, -0.28804, -0.19081)
+  # required fields 
+  req_fields =c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_BIRTHS", "FIRST_DEGREE_RELATIVES")
 
-  AGECAT = (avatar$AGE >= 50) + 0
-  AGEMEN = ifelse(avatar$AGE_AT_MENARCH >= 14, 0,
-                  ifelse(avatar$AGE_AT_MENARCH < 12, 2, 1) 
+  has_fields = req_fields %in% colnames(avatars)
+  if(!all(has_fields))
+  { stop(paste("Can not use Gail, missing fields:", req_fields[!has_fields])) }
+
+
+  AGECAT = (avatars$AGE >= 50) + 0
+  AGEMEN = ifelse(avatars$AGE_AT_MENARCHE >= 14, 0,
+                  ifelse(avatars$AGE_AT_MENARCHE < 12, 2, 1) 
                   )
-  NBIOPS = ifelse(avatar$BIOPSY == 0, 0,
-                  ifelse(avatar$BIOPSY == 1, 1, 2))
-  AGEFLB = ifelse(!avatar$PARITY, 2, 
-                  ifelse(avatar$AGE_AT_BIRTHS < 20, 0,
-                         ifelse(avatar$AGE_AT_BIRTHS >= 20 &
-                                avatar$AGE_AT_BIRTHS <  25, 1,
-                                ifelse(avatar$AGE_AT_BIRTHS >= 25 &
-                                       avatar$AGE_AT_BIRTHS <  30, 2, 3
+  NBIOPS = ifelse(avatars$BIOPSY == 0, 0,
+                  ifelse(avatars$BIOPSY == 1, 1, 2))
+  AGEFLB = ifelse(!avatars$PARITY, 2, 
+                  ifelse(avatars$AGE_AT_BIRTHS < 20, 0,
+                         ifelse(avatars$AGE_AT_BIRTHS >= 20 &
+                                avatars$AGE_AT_BIRTHS <  25, 1,
+                                ifelse(avatars$AGE_AT_BIRTHS >= 25 &
+                                       avatars$AGE_AT_BIRTHS <  30, 2, 3
                                        )))) 
 
-  NUMREL = ifelse(avatar$FIRST_DEGREE_RELATIVES == 0, 0,
-                  ifelse(avatar$FIRST_DEGREE_RELATIVES == 1, 1, 2))
+  NUMREL = ifelse(avatars$FIRST_DEGREE_RELATIVES == 0, 0,
+                  ifelse(avatars$FIRST_DEGREE_RELATIVES == 1, 1, 2))
 
   # which are multiplied by these vars (AGE = 1)
-  var = rbind(0,AGEMEN , NBIOPS ,  AGEFLB,  NUMREL,       1,   NBIOPS, AGEFLB * NUMREL)
+  data.frame(AGECAT, AGEMEN, NBIOPS, AGEFLB, NUMREL)
+}
+
+# Takes avatars and a fit (or fit finding function) and returns a three column matrix with:
+#  RR: avatars relative risk at current age
+#  RR_LT_50: avatars relative relative risk for ages younger than 50
+#  RR_GTE_50: avatars relative relative risk for ages 50 or older
+gail_rr = function(avatars, fit = Gail89){
+  # if avatar's are not in Gail format, convert it
+  if(!all(c("AGECAT", "AGEMEN", "NBIOPS","AGEFLB", "NUMREL" %in% colnames(avatars)))) {
+    avatars = gail_avatars(avatars)
+  }
+
+  # if we have fit finder, run avatars one-by-one
+  if(is.function(fit)) {
+    return(apply(avatars, 1, function(avatar) {
+      gail_rr(avatar, fit(avatar))
+    }))
+  }
 
   # AGECAT = 0 
-  RR_LT_50  = exp(apply((cof * c(0,1,1,1,1,0,1,0) * var), 2, sum))
-  # AGECAT = 1 
-  RR_GTE_50 = exp(apply((cof * var), 2, sum))
 
-  RR = ifelse(AGECAT, RR_GTE_50, RR_LT_50)
+  print(avatars)
+  var = rbind(
+           0 # intercept
+         , avatars$AGEMEN
+         , avatars$NBIOPS
+         , avatars$AGEFLB
+         , avatars$NUMREL
+         , 1 # AGECAT
+         , avatars$NBIOPS # * AGECAT
+         , avatars$AGEFLB * avatars$NUMREL
+         )
+
+  RR_LT_50  = exp(apply((fit$cof * c(0,1,1,1,1,0,0,1) * var), 2, sum))
+  print(RR_LT_50)
+  # AGECAT = 1 
+  RR_GTE_50 = exp(apply((fit$cof * c(0,1,1,1,1,1,1,1) * var), 2, sum))
+  print(RR_GTE_50)
+
+  RR = ifelse(avatars$AGECAT, RR_GTE_50, RR_LT_50)
 
   # Project RR risk a population into the future
   time = 15 
 
-  ar = mapply(function(AGE, RR_LT_50, RR_GTE_50) {
-                ar = rr_to_abs(AGE, time, ifelse(cutpts < 50, RR_LT_50, RR_GTE_50), cutpts, h1, h2)
-                ar[length(ar)]
-                  }, avatar$AGE, RR_LT_50, RR_GTE_50)
 
-
-  data.frame(RR, RR_LT_50, RR_GTE_50, ar)
+  cbind(RR, RR_LT_50, RR_GTE_50)
 }
 
 
-rr_to_abs = function( age, years, rr, table) {
-
-  h1 = table$h1_star * table$F
-  h2 = table$h2
-  cutpts = table$cutpoints
-  print("RR")
-  rr = cbind(cutpts,rr)[,2]
-  cutpts = append(cutpts[cutpts < (age + years)], age+years)
+relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, hazards) {
+  print(hazards)
+  h1 = hazards$h1_star * hazards$F
+  h2 = hazards$h2
+  cutpts = hazards$cutpoints
+  print(cutpts)
+  rr = ifelse(cutpts < 50, rr_lt_50, rr_gte_50)
+  print(rr)
+  # cutpts = append(cutpts[cutpts < (age + years)], age+years)
 
 
   h1 = h1[1:(length(cutpts)-1)]
@@ -139,44 +216,51 @@ rr_to_abs = function( age, years, rr, table) {
 
   cut_f = function(x) cut(x, cutpts, include.lowest=T, right=F)
 
-  age_index = cut_f(age)
+  age_index = cut_f(as.numeric(age))
 
   # TODO Calc Interval widths
   widths = 5
 
-  tbl = data.frame(levels(age_index), rr, h1, h2, widths)
+  # tbl = data.frame(levels(age_index), rr, h1, h2, widths)
 
-  print(tbl)
+  # print(tbl)
 
 
   S1_t = cumprod(exp(-1 * h1 * rr * widths))
   S2_t = cumprod(exp(-1 * h2      * widths))
 
-  # S1_f = function(t) {
-  #  ifelse(t == 0, 1, S1_f(t-1) * exp(-1* rr[t] * h1[t] * widths))
-  # }
-  # S2_f = function(t) {
-  #  ifelse(t == 0, 1, S2_f(t-1) * exp(-1* h2[t] * widths))
-  # }
   S1_a = S1_t[as.numeric(age_index)]
   S2_a = S2_t[as.numeric(age_index)]
 
   S1_t=append(1,S1_t)[1:length(h1)]
   S2_t=append(1,S2_t)[1:length(h1)]
 
-  sum( (h1 * rr) / (h1 * rr + h2)
+  five_year_risks = cumsum(
+       (h1 * rr) / (h1 * rr + h2)
      * (S1_t / S1_a)
      * (S2_t / S2_a)
      * (1 - exp( -1 * widths * (h1 * rr + h2)))
      )
-  
+
+  print(five_year_risks)
+  # returns list of 5-year risks
+
+  five_year_risks[as.numeric(cut_f(age+years))]
+
 }
 
 
 
 
-# test = data.frame( AGE = c(54,54,60,30) , FIRST_DEGREE_RELATIVES = c(1,0,3,0) , BIOPSY = c(1,4,3,0) , AGE_AT_MENARCHE = c(15, 18,10,15) , AGE_AT_BIRTHS	= c(0,24,30,20) , PARITY = c(F,T,T,T))
-# print(Gail89_LPM1(test))
+test = data.frame( cbind(AGE    = c(54,60,30)
+                 , BIOPSY = c(1,3,0)
+                 , FIRST_DEGREE_RELATIVES = c(1,3,0)
+                 , AGE_AT_MENARCHE = c(15,10,15) 
+                 , AGE_AT_BIRTHS	 = c(0,30,20)
+                 , PARITY = c(0,1,1)
+                 ))
+print(test)
+print(gail_algorithm(test))
 
 comp = matrix(0, nrow=3, ncol=6, dimnames=list(years=c(10,20,30), rr=c(1,2,5,10,20,30)))
 
