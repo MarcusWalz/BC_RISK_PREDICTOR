@@ -251,11 +251,12 @@ relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, haza
   S1_t = cumprod(exp(-1 * h1 * rr * widths))
   S2_t = cumprod(exp(-1 * h2      * widths))
 
-  S1_a = S1_t[age_index]
-  S2_a = S2_t[age_index]
 
   S1_t=append(1,S1_t)[1:length(h1)]
   S2_t=append(1,S2_t)[1:length(h1)]
+
+  S1_a = S1_t[age_index]
+  S2_a = S2_t[age_index]
 
   five_year_risks = cumsum(
        (1:(length(h1)) >= (age_index))
