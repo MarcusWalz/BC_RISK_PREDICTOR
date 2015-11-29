@@ -22,6 +22,7 @@
 #Citation:		 Gail MH, Brinton LA, Byar DP, et al. Projecting individualized probabilities of developing breast cancer for white females who are being examined annually. J Natl Cancer Inst. 1989;81(24):1879-86.
 #####################################################################################
 
+# options(warn=2)
 
 cutpts = c(20,25,30,35,40,45,50,55,60,65,70,75,80,85,90)
 
@@ -38,27 +39,30 @@ h2 = h2_2
 # Mortality rates taken from National Center For Health Stat. Vital Statistics in the United States
 # Mortality 1979, vol 2A
 
+
 cutpoints          = c(20  ,   25,   30,    35,    40,    45,    50,    55,     60,     65,     70,     75) #-80
+width              = rep(5,12)
 death_rate_1979    = c(58.8, 60.8, 73.1, 106.7, 175.5, 286.6, 459.7, 701.9, 1105.4, 1598.9, 2527.2, 4451.8) / 10^5
 death_rate_1979_bc = c( 0.2,  1.3,  5.1,  11.6,  23.6,  37.4,  58.8,  74.7,   87.7,   98.3,  107.4,  124.9) / 10^5
                             
 bcddp              = c( 2.7, 16.8, 60.3, 114.6, 203.7, 280.8, 320.9, 293.8,  369.4,  356.1,  307.8,  301.3) / 10^5 
 seer               = c( 1.3,  8.0, 28.8,  54.7, 109.2, 173.3, 198.8, 221.5,  278.3,  315.3,  331.3,  364.0) / 10^5
+
 F                  = append(rep(0.5229, 6), rep(0.5264, 6))
 
-gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc), F)
+gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc*0), F, width)
 
 Gail89 = 
   list( hazards = gail89
-      , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
-      )
+       , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
+       )
 
-gail_algorithm = function(avatars, years=c(5,10,15), fit = Gail89, aux_rr=NA) {
-  if(!is.na(aux_rr)) {
+gail_algorithm = function(avatars, years=c(5,10,15), fit = Gail89, aux_rr=NULL) {
+  if(!is.null(aux_rr)) {
     if(is.function(aux_rr)) {
       aux_rr = aux_rr(avatars)
     } else if(length(aux_rr) == nrow(avatars)) {
-      aux_rr= aux_rr
+      aux_rr = aux_rr
     } else {
       stop("aux_rr invalid")
     }
@@ -69,12 +73,10 @@ gail_algorithm = function(avatars, years=c(5,10,15), fit = Gail89, aux_rr=NA) {
   relative_risks = gail_rr(avatars, fit) * aux_rr 
 
   absolute_risks=t(apply(cbind(avatars, relative_risks), 1,
-    function(avatar) {
-      avatar = data.frame(t(avatar))
-      my_fit = ifelse(is.function(fit), fit(avatar), fit)
+                         function(avatar) {
+                           avatar = data.frame(t(avatar))
+                           my_fit = ifelse(is.function(fit), fit(avatar), fit)
       my_fit = fit
-      print("~~~~~~~~~~~")
-      print(my_fit$hazards)
       relative_risk_to_absolute_risk(
         avatar$AGE
       , years
@@ -127,8 +129,9 @@ gail_avatars = function(avatars) {
   req_fields =c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_BIRTHS", "FIRST_DEGREE_RELATIVES")
 
   has_fields = req_fields %in% colnames(avatars)
-  if(!all(has_fields))
-  { stop(paste("Can not use Gail, missing fields:", req_fields[!has_fields])) }
+  if(!all(has_fields)) {
+    stop(paste("Can not use Gail, missing fields:", req_fields[!has_fields]))
+  }
 
 
   AGECAT = (avatars$AGE >= 50) + 0
@@ -158,7 +161,7 @@ gail_avatars = function(avatars) {
 #  RR_GTE_50: avatars relative relative risk for ages 50 or older
 gail_rr = function(avatars, fit = Gail89){
   # if avatar's are not in Gail format, convert it
-  if(!all(c("AGECAT", "AGEMEN", "NBIOPS","AGEFLB", "NUMREL" %in% colnames(avatars)))) {
+  if(!all(c("AGECAT", "AGEMEN", "NBIOPS","AGEFLB", "NUMREL") %in% colnames(avatars))) {
     avatars = gail_avatars(avatars)
   }
 
@@ -171,7 +174,6 @@ gail_rr = function(avatars, fit = Gail89){
 
   # AGECAT = 0 
 
-  print(avatars)
   var = rbind(
            0 # intercept
          , avatars$AGEMEN
@@ -184,7 +186,6 @@ gail_rr = function(avatars, fit = Gail89){
          )
 
   RR_LT_50  = exp(apply((fit$cof * c(0,1,1,1,1,0,0,1) * var), 2, sum))
-  print(RR_LT_50)
   # AGECAT = 1 
   RR_GTE_50 = exp(apply((fit$cof * c(0,1,1,1,1,1,1,1) * var), 2, sum))
   print(RR_GTE_50)
@@ -199,54 +200,75 @@ gail_rr = function(avatars, fit = Gail89){
 }
 
 
+# Modifies hazard matrix for cutpoints at intervals corresponding to target
+# age. This way we can calculate hazards for patients whose age is not a 
+# multiple of 5.
+hazard_splice = function(hazards, years) {
+  cuts = hazards$cutpoints
+  total_width = cuts[length(cuts)] + hazards$width[nrow(hazards)]
+
+  cuts = append(cuts, total_width)
+
+  if(any(years > total_width)) {
+    warning("Projecting risk too far into future.")
+    years = years[years <= total_width]
+  }
+
+  new_cuts = unique(sort(append(hazards$cutpoints, years)))
+  trans = cut(new_cuts, breaks=cuts, right=FALSE, include.lowest=FALSE)
+
+  new_h = hazards[as.numeric(trans),]
+  new_h$cutpoints = new_cuts
+  new_widths = append(new_cuts[-1], total_width) - new_cuts
+  new_h$width = new_widths
+
+  new_h
+}
+
 relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, hazards) {
-  print(hazards)
+  hazards = hazard_splice(hazards, append(age,age+years))
+#  print(hazards)
   h1 = hazards$h1_star * hazards$F
   h2 = hazards$h2
   cutpts = hazards$cutpoints
-  print(cutpts)
+  widths = hazards$width
   rr = ifelse(cutpts < 50, rr_lt_50, rr_gte_50)
-  print(rr)
-  # cutpts = append(cutpts[cutpts < (age + years)], age+years)
 
+  cuts = hazards$cutpoints
+  total_width = cuts[length(cuts)] + hazards$width[nrow(hazards)]
+  cuts = unique(append(cuts, total_width))
 
-  h1 = h1[1:(length(cutpts)-1)]
-  h2 = h2[1:(length(cutpts)-1)]
-  rr = rr[1:(length(cutpts)-1)]
+  cut_f = function(x) {
+    cut(x, breaks=cuts, right=FALSE, include.lowest=FALSE)
+  }
 
-  cut_f = function(x) cut(x, cutpts, include.lowest=T, right=F)
-
-  age_index = cut_f(as.numeric(age))
-
-  # TODO Calc Interval widths
-  widths = 5
+  age_index = as.numeric(cut_f(age))
 
   # tbl = data.frame(levels(age_index), rr, h1, h2, widths)
-
   # print(tbl)
 
 
   S1_t = cumprod(exp(-1 * h1 * rr * widths))
   S2_t = cumprod(exp(-1 * h2      * widths))
 
-  S1_a = S1_t[as.numeric(age_index)]
-  S2_a = S2_t[as.numeric(age_index)]
+  S1_a = S1_t[age_index]
+  S2_a = S2_t[age_index]
 
   S1_t=append(1,S1_t)[1:length(h1)]
   S2_t=append(1,S2_t)[1:length(h1)]
 
   five_year_risks = cumsum(
-       (h1 * rr) / (h1 * rr + h2)
+       (1:(length(h1)) >= (age_index))
+     * (h1 * rr) / (h1 * rr + h2)
      * (S1_t / S1_a)
      * (S2_t / S2_a)
      * (1 - exp( -1 * widths * (h1 * rr + h2)))
      )
 
-  print(five_year_risks)
+#  print(five_year_risks)
   # returns list of 5-year risks
 
-  five_year_risks[as.numeric(cut_f(age+years))]
-
+  five_year_risks[as.numeric(cut_f(age+years-1))]
 }
 
 
@@ -261,18 +283,22 @@ test = data.frame( cbind(AGE    = c(54,60,30)
                  ))
 print(test)
 print(gail_algorithm(test))
+warnings()
 
-comp = matrix(0, nrow=3, ncol=6, dimnames=list(years=c(10,20,30), rr=c(1,2,5,10,20,30)))
+valid_names =list(year=c(10,20,30), rr=c(1,2,5,10,20,30), age=c(20,30,40,50))
+comp = array(0, dim=c(3,6,4), dimnames = valid_names)
 
-for(year in rownames(comp)) {
-  for(rr in colnames(comp)) {
-  comp[year,rr] = rr_to_abs( 20, as.numeric(year), as.numeric(rr), gail89)
+for(age in dimnames(comp)[[3]]) {
+  for(year in dimnames(comp)[[1]]) {
+      for(rr in dimnames(comp)[[2]]) {
+  comp[,rr,age] = relative_risk_to_absolute_risk(as.numeric(age), c(10,20,30), as.numeric(rr), as.numeric(rr), gail89)
+    }
   }
 }
 warnings()
 
-print(comp)
-comp = floor(comp*1000)/10
+# print(comp)
+comp  = round(comp*100, digits=1)
 
 reported = 
   cbind( "1"  = c(0,0.5,1.7)
@@ -282,7 +308,38 @@ reported =
        , "20" = c(1.0,9.5,29.3)
        , "30" = c(1.4,14.0,40.5)
        )
+reported_2 = 
+  cbind( "1"  = c(0.5,1.7,3.2)
+       , "2"  = c(0.9,3.3,6.3)
+       , "5"  = c(2.3,8.1,14.9)
+       , "10" = c(4.4,15.6,27.6)
+       , "20" = c(8.7,28.8,47.4)
+       , "30" = c(12.8,39.9,61.7)
+       )
+reported_3 = 
+  cbind( "1"  = c(1.2,2.8,4.4)
+       , "2"  = c(2.5,5.5,8.6)
+       , "5"  = c(6.1,13.1,20.0)
+       , "10" = c(11.8,24.4,35.9)
+       , "20" = c(22.2,42.7,58.5)
+       , "30" = c(31.3,56.6,72.8)
+       )
 
+reported_4 = 
+  cbind( "1"  = c(1.6, 3.2, 4.4)
+       , "2"  = c(3.1,6.4,8.5)
+       , "5"  = c(7.6,15.1,19.9)
+       , "10" = c(14.6,27.9,35.5)
+       , "20" = c(27.1,47.8,57.8)
+       , "30" = c(37.7,61.9,71.7)
+       )
+
+gail_vals = (simplify2array(list(reported, reported_2, reported_3, reported_4)))
+print(gail_vals)
+dim(gail_vals) = c(3,6,4)
+dimnames(gail_vals)=valid_names
+reported = gail_vals
+rownames(reported_2) = c("10","20","30")
 rownames(reported) = c("10","20","30")
 
 print("Reported in Gail89 (percent)")
@@ -292,3 +349,7 @@ print(comp)
 print("output - reported")
 print(comp-reported)
 
+print("mean error")
+print(mean(comp-reported))
+print("max error")
+print(max(comp-reported))
