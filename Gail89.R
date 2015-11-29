@@ -50,7 +50,7 @@ seer               = c( 1.3,  8.0, 28.8,  54.7, 109.2, 173.3, 198.8, 221.5,  278
 
 F                  = append(rep(0.5229, 6), rep(0.5264, 6))
 
-gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc*0), F, width)
+gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc), F, width)
 
 Gail89 = 
   list( hazards = gail89
