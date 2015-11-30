@@ -36,66 +36,43 @@ h2_2 = c(44.12,52.54,67.46,90.62,125.34,195.7,329.84,546.22,910.35
 h2 = h2_2
 
 
+
+# Exact Numbers used in the Gail89 paper
+
 # Mortality rates taken from National Center For Health Stat. Vital Statistics in the United States
 # Mortality 1979, vol 2A
-
-
 cutpoints          = c(20  ,   25,   30,    35,    40,    45,    50,    55,     60,     65,     70,     75) #-80
 width              = rep(5,12)
+# Death Rate
 death_rate_1979    = c(58.8, 60.8, 73.1, 106.7, 175.5, 286.6, 459.7, 701.9, 1105.4, 1598.9, 2527.2, 4451.8) / 10^5
+# Breast Cancer only Death Rate
 death_rate_1979_bc = c( 0.2,  1.3,  5.1,  11.6,  23.6,  37.4,  58.8,  74.7,   87.7,   98.3,  107.4,  124.9) / 10^5
                             
 bcddp              = c( 2.7, 16.8, 60.3, 114.6, 203.7, 280.8, 320.9, 293.8,  369.4,  356.1,  307.8,  301.3) / 10^5 
+# SEER cancer rate (not used)
 seer               = c( 1.3,  8.0, 28.8,  54.7, 109.2, 173.3, 198.8, 221.5,  278.3,  315.3,  331.3,  364.0) / 10^5
 
 F                  = append(rep(0.5229, 6), rep(0.5264, 6))
 
-gail89 = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc), F, width)
+gail89_hazards = data.frame(cutpoints, h1_star=bcddp, h2=(death_rate_1979 - death_rate_1979_bc), F, width)
 
-Gail89 = 
-  list( hazards = gail89
-       , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
-       )
+gail89 = 
+  list( hazards = gail89_hazards
+      , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
+      )
 
-gail_algorithm = function(avatars, years=c(5,10,15), fit = Gail89, aux_rr=NULL) {
-  if(!is.null(aux_rr)) {
-    if(is.function(aux_rr)) {
-      aux_rr = aux_rr(avatars)
-    } else if(length(aux_rr) == nrow(avatars)) {
-      aux_rr = aux_rr
-    } else {
-      stop("aux_rr invalid")
-    }
-  } else {
-    aux_rr = 1;
-  }
-  # calculate the relative risks 
-  relative_risks = gail_rr(avatars, fit) * aux_rr 
 
-  absolute_risks=t(apply(cbind(avatars, relative_risks), 1,
-                         function(avatar) {
-                           avatar = data.frame(t(avatar))
-                           my_fit = ifelse(is.function(fit), fit(avatar), fit)
-      my_fit = fit
-      relative_risk_to_absolute_risk(
-        avatar$AGE
-      , years
-      , avatar$RR_LT_50
-      , avatar$RR_GTE_50
-      , my_fit$hazards) 
-    }
-  ))
-  colnames(absolute_risks) = paste(years, "year AR")
 
-  cbind(relative_risks, absolute_risks)
+width = rep(5,13)
 
-}
+
 
 print(gail89)
 
+# TODO 
 # Data is published to fit several races.
 # This function fetches the most specific based on the avatar.
-get_constants_by_demographic = function(avatar, original_gail=T) {
+get_fit_by_demographic = function(avatar, original_gail=T) {
 
   if(original_gail) {
     # deaths for white females only!
@@ -122,6 +99,8 @@ get_constants_by_demographic = function(avatar, original_gail=T) {
   }
 }
 
+
+# Converts our input to the format used in Gail papers
 gail_avatars = function(avatars) {
   # Convert to gail format. 
 
@@ -225,7 +204,9 @@ hazard_splice = function(hazards, years) {
   new_h
 }
 
-relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, hazards) {
+
+# Projected Absolute Risk
+gail_relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, hazards) {
   hazards = hazard_splice(hazards, append(age,age+years))
 #  print(hazards)
   h1 = hazards$h1_star * hazards$F
@@ -272,8 +253,44 @@ relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, haza
   five_year_risks[as.numeric(cut_f(age+years-1))]
 }
 
+# Performs the Gail Algorithm (old-school gail89 by default).
+gail_algorithm = function( avatars              # DF of avatars
+                         , years  = c(5,10,15)  # Years to Calculate Absolute Risk On
+                         , fit    = gail89      # Fit finding function (e.g. ``)
+                         , aux_rr = NULL        # auxilary relative risk function
+                         ) {
+  if(!is.null(aux_rr)) {
+    if(is.function(aux_rr)) {
+      aux_rr = aux_rr(avatars)
+    } else if(length(aux_rr) == nrow(avatars)) {
+      aux_rr = aux_rr
+    } else {
+      stop("aux_rr invalid")
+    }
+  } else {
+    aux_rr = 1;
+  }
+  # calculate the relative risks 
+  relative_risks = gail_rr(avatars, fit) * aux_rr 
 
+  absolute_risks=t(apply(cbind(avatars, relative_risks), 1,
+                         function(avatar) {
+                           avatar = data.frame(t(avatar))
+                           my_fit = ifelse(is.function(fit), fit(avatar), fit)
+      my_fit = fit
+      gail_relative_risk_to_absolute_risk(
+        avatar$AGE
+      , years
+      , avatar$RR_LT_50
+      , avatar$RR_GTE_50
+      , my_fit$hazards) 
+    }
+  ))
+  colnames(absolute_risks) = paste(years, "year AR")
 
+  cbind(relative_risks, absolute_risks)
+
+}
 
 test = data.frame( cbind(AGE    = c(54,60,30)
                  , BIOPSY = c(1,3,0)
@@ -292,7 +309,13 @@ comp = array(0, dim=c(3,6,4), dimnames = valid_names)
 for(age in dimnames(comp)[[3]]) {
   for(year in dimnames(comp)[[1]]) {
       for(rr in dimnames(comp)[[2]]) {
-  comp[,rr,age] = relative_risk_to_absolute_risk(as.numeric(age), c(10,20,30), as.numeric(rr), as.numeric(rr), gail89)
+        comp[,rr,age] = gail_relative_risk_to_absolute_risk(
+          as.numeric(age)
+        , c(10,20,30)
+        , as.numeric(rr)
+        , as.numeric(rr)
+        , gail89$hazards
+        )
     }
   }
 }
