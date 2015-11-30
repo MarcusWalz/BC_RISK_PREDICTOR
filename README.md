@@ -26,26 +26,31 @@ missing variables:
   <dd>Age patient had menache. Numeric</dd>
 
   <dt>AGE_AT_FIRST_BIRTH</dt>
-  <dd>Age patient had first child. `0` or `NA` if patient has no children. Numeric</dd>
+  <dd>Age patient had first child. 
+  <code>0</code> or <code>NA</code> if patient has no children. Numeric
+  </dd>
 
   <dt>PARITY</dt>
-  <dd>`1` or `TRUE` if patient has had a child, `0` or `FALSE` otherwise. 
-  If `PARITY` is absent, it will be constructed from `AGE_AT_FIRST_BIRTH`, s.t. 
-  if `AGE_AT_FIRST_BIRTH` is `0` or `NA` then `PARITY` is set to `FALSE`,
-  otherwise `PARITY` is set to `TRUE`.
+  <dd><code>1</code> or <code>TRUE</code> if patient has had a child, <code>0</code> or <code>FALSE</code> otherwise. 
+  If <code>PARITY</code> is absent, it will be constructed from <code>AGE_AT_FIRST_BIRTH</code>, s.t. 
+  if <code>AGE_AT_FIRST_BIRTH</code> is <code>0</code> or <code>NA</code>
+  then <code>PARITY</code> is set to <code>FALSE</code>, otherwise <code>PARITY</code> is set to <code>TRUE</code>.
 
   <dt>AGE_AT_MENOPAUSE</dt>
-  <dd>Age patient underwent meonpause. `0` if patient has not undergone menopause. Numeric</dd>
+  <dd>Age patient underwent meonpause. <code>0</code> or <code>NA</code>
+  if patient has not undergone menopause yet. Numeric.  </dd>
 
 
   <dt>MENOPAUSE_STATUS<dt>
-  <dd>`1` or `TRUE` if patient has had menopause, `0` or `FALSE` otherwise. Can be
-  derived from `AGE_AT_MENOPAUSE`.</dd>
+  <dd><code>1</code> or <code>TRUE</code> if patient has had menopause,
+    <code>0</code> or <code>FALSE</code> otherwise. Can be derived from <code>AGE_AT_MENOPAUSE</code>.</dd>
 
   <dt>RACE</dt>
-  <dd>Either `White`, `Black`, `Hispanic`, or `Asian`.</dd>
+  <dd>Either <code>White</code>, <code>Black</code>, <code>Hispanic</code>, or <code>Asian</code>.</dd>
 
   <dt>Biopsy<dt>
-  <dd>Number of breast biopsy's a patient has had. Either numeric or `"0"`, `"1"` `">=2"`.</dd>
+  <dd>Number of breast biopsy's a patient has had. Either numeric or <code>"0"</code>, <code>"1"</code>, 
+    <code>">=2"</code>.
+  </dd>
 
 </dl>
