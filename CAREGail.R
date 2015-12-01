@@ -1,7 +1,5 @@
 # Hide output of Gail89 for now.
-sink("sink.txt")
-source("Gail89.R", print.eval = F)
-sink()
+source("GailAlgorithm.R")
 
 
 cutpoints = c(  20,    25,   30,    35,    40,     45,   50,    55,     60,     65,     70,     75,     80,      85)
@@ -10,12 +8,12 @@ h2        = c(74.4, 101.7,145.9, 215.9, 315.1, 448.8, 632.3, 963.0, 1471.0, 2116
 width     = rep(5,14)
 F         = rep(1,14)
 
-CAREGail = list( hazards = data.frame(cutpoints, h1_star, h2, F, width)
+CAREGail_params = list( hazards = data.frame(cutpoints, h1_star, h2, F, width)
                , cof     = c(0, 0.0815, 0.185, 0.0014, 0.424, 0.0264, -0.114, 0.0485)
                )
 
-print(CAREGail)
+CAREGail = function(avatars, time) gail_algorithms(avatars, time, CAREGail_params)
 
 # this calculates 20 year absolute risk for a 30yo with a relative risk of 10
 # according to the CAREGail algorithm.
-# gail_relative_risk_to_absolute_risk(30, 20, 10, 10, CAREGail$hazards)
+# gail_relative_risk_to_absolute_risk(30, 20, 10, 10, CAREGail_params$hazards)
