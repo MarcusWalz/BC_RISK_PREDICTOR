@@ -8,7 +8,7 @@ Calculate indivdual 5, 10, 20 year absolute risk of developing breast cancer for
 
 Calculate the 5 year per 100,000 breast cancer incidence rate of a population according to the Gail89 model (TODO):
 
-    expected_cases = hazard_rate("Gail89", population, years=5)
+    expected_cases = hazard_rate("Gail89", my_population, years=5)
 
 Supported Algorithms 
 -------------------
@@ -18,7 +18,6 @@ Supported Algorithms
 
 Input Format <a name="iformat"></a>
 -------------------
-
 
 All algorithms are designed to use the same input format. However, not all
 variables are required for every algorithm. Each Breast Cancer Risk algorithm 
