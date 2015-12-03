@@ -1,13 +1,24 @@
 # Breast Cancer Risk Prediction Alogrithms
 
-Supported Algorithms
+Let `my_population` be a dataframe in the format described [below](#iformat).
+
+Calculate indivdual 5, 10, 20 year absolute risk of developing breast cancer for a population (TODO):
+
+    per_patient_risk = bc_risk("Gail89", my_population, years=c(5,10,20))
+
+Calculate the 5 year per 100,000 breast cancer incidence rate of a population according to the Gail89 model (TODO):
+
+    expected_cases = hazard_rate("Gail89", population, years=5)
+
+Supported Algorithms 
 -------------------
 
 * Gail89 --- TODO
 * Tice08 --- TODO
 
-Input Format
+Input Format <a name="iformat"></a>
 -------------------
+
 
 All algorithms are designed to use the same input format. However, not all
 variables are required for every algorithm. Each Breast Cancer Risk algorithm 
