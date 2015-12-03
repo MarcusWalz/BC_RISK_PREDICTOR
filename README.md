@@ -1,6 +1,6 @@
 # Breast Cancer Risk Prediction Alogrithms
 
-Let `my_population` be a dataframe in the format described [below](#iformat).
+Let `my_population` be a dataframe in the format described [below](#input-format).
 
 Calculate indivdual 5, 10, 20 year absolute risk of developing breast cancer for a population (TODO):
 
@@ -16,7 +16,7 @@ Supported Algorithms
 * Gail89 --- TODO
 * Tice08 --- TODO
 
-Input Format <a name="iformat"></a>
+Input Format
 -------------------
 
 All algorithms are designed to use the same input format. However, not all
