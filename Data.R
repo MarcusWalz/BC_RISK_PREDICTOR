@@ -54,19 +54,89 @@ AGE_AT_MENOPAUSE_FIELD =
 # Multifield validator, checks that AGE > AGE_AT_MENARCHE
 AGE_AND_AGE_AT_MENARCHE_FIELD =
   list( field = c("AGE", "AGE_AT_MENARCHE")
-      , description = "AGE should be greater than AGE_AT_MENARCHE"
+      , description = "AGE should be greater than AGE_AT_MENARCHE."
       , valid = function(AGE, AGE_AT_MENARCHE) {
         all(AGE > AGE_AT_MENARCHE) 
       }
       )
+
+# filter null values in a field
+filter_null = function(l) {
+  Filter( function(x) !is.null(x), l)
+}
+
+binary_to_field = function(name, predicate, risk=NULL) {
+  filter_null(
+    list( field = name
+        , description = paste("1 or T if", predicate, ", 0 or F otherwise.") 
+        , valid = function(field) {
+          is.logical(field) || all( field == 0 | field == 1) 
+        }
+        , risk = { 
+            if( !is.null(risk) ) {
+              function(field) {
+                risk[as.numeric(field)]
+              }
+            } else {
+              NULL
+            }
+          }
+        )
+  )
+}
+
+PARITY_FIELD           = binary_to_field("PARITY", "women has had a child")
+MENOPAUSE_STATUS_FIELD = binary_to_field("MENOPAUSE_STATUS", "women has menopause")
+
+factor_to_field = function(name, factor, risk = NULL, allow_na=F) {
+  filter_null(
+    list( field = name
+        , description = paste(
+          name, "as a factor, either:", paste(levels(factor), collapse=", ")
+          , ifelse(allow_na, "NA.", ".")
+        )
+        , valid = function(fact) {
+          all(fact %in% levels(factor) | (allow_na & (fact == NA)))
+        }
+        , risk = { 
+            if( !is.null(risk) ) {
+              function(field) {
+                risk[as.numeric(field)]
+              }
+            } else {
+              NULL
+            }
+          }
+        )
+  )
+}
+
+
+RACE_FACTOR = factor(c("Asian", "Black", "Hispanic", "White"))
+
+RACE_FIELD = factor_to_field("RACE", RACE_FACTOR)
 
 BC_RISK_FIELDS =
   list( AGE_FIELD
       , AGE_AT_MENARCHE_FIELD
       , AGE_AT_MENOPAUSE_FIELD
       , AGE_AND_AGE_AT_MENARCHE_FIELD
+      , RACE_FIELD
+      , PARITY_FIELD
+      , MENOPAUSE_STATUS_FIELD
       )
 
+BC_RISK_FIELD_DESC = 
+  do.call(rbind, Map(function(field) {
+      data.frame( row.names      = paste(field$field, collapse=", ")
+                , has_validator  = "valid" %in% names(field)
+                , is_risk_factor = "risk" %in% names(field)
+                , description    = field$description
+                )
+    }, BC_RISK_FIELDS)
+  )
+
+print(BC_RISK_FIELD_DESC)
 
 validate_bc_risk_input = function(population, warn=F) {
   errors = FALSE
@@ -106,7 +176,7 @@ random_population = function(n = 1000) {
   PARITY = sample(c(0,1), n, replace=T, c(0.3,0.7))
   MENOPAUSE_STATUS = sample(c(0,1), n, replace=T, c(0.3,0.7))
   
-  RACE   = as.factor(sample(c("White", "Black", "Hispanic", "Asian"), n, replace=T))
+  RACE   = as.factor(sample(levels(RACE_FACTOR), n, replace=T))
   BIOPSY = sample(c(1, 2, 3), n, replace=T)
 
   undelta_age(
@@ -121,5 +191,5 @@ random_population = function(n = 1000) {
     )
 }
 
-random_population(300)
+#random_population(300)
 validate_bc_risk_input(random_population(300))
