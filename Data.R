@@ -51,10 +51,20 @@ AGE_AT_MENOPAUSE_FIELD =
       }
       )
 
+# Multifield validator, checks that AGE > AGE_AT_MENARCHE
+AGE_AND_AGE_AT_MENARCHE_FIELD =
+  list( field = c("AGE", "AGE_AT_MENARCHE")
+      , description = "AGE should be greater than AGE_AT_MENARCHE"
+      , valid = function(AGE, AGE_AT_MENARCHE) {
+        all(AGE > AGE_AT_MENARCHE) 
+      }
+      )
+
 BC_RISK_FIELDS =
   list( AGE_FIELD
       , AGE_AT_MENARCHE_FIELD
       , AGE_AT_MENOPAUSE_FIELD
+      , AGE_AND_AGE_AT_MENARCHE_FIELD
       )
 
 
@@ -62,16 +72,19 @@ validate_bc_risk_input = function(population, warn=F) {
   errors = FALSE
 
   for(field in BC_RISK_FIELDS) {
-    if( all(field$field %in% colnames(population)) ) {
+    if( all(field$field %in% colnames(population)) && "valid" %in% names(field)) {
       tryCatch( 
         {
-          is_valid_column = do.call(field$valid, lapply(field$field,
-            function(f) population[, f])
+          is_valid_column = do.call(field$valid, 
+            lapply(field$field, function(f) population[, f])
           )
           if( !is_valid_column ) { stop("Column did not pass validator") }
         }
         , error = function(err) {
-          print(paste("Error in", field$field, "--", field$description))
+          write(paste("Input error in"
+                     , paste(field$field, collapse=", ")
+                     , "--"
+                     , field$description), stderr())
           errors <<- TRUE
         })
     }
@@ -83,7 +96,7 @@ validate_bc_risk_input = function(population, warn=F) {
   return(!errors)
 }
 
-# Construct a random test population that's almost clinically realistic
+# Construct a random test population that's valid
 random_population = function(n = 1000) {
   AGE_AT_MENARCHE = rnorm(n, 13, 1)
   AGE_AT_FIRST_BIRTH = abs(rnorm(n, 10, 4))
