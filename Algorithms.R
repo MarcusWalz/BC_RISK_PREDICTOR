@@ -8,21 +8,6 @@ bc_risk_algorithms = rbind(
 )
 
 
-# AGE = AGE_AT_MENACHE + AGE_AT_FIRST_BIRTH + AGE_AT_MENOPAUSE + AGE
-undelta_age = function(population) {
-
-  a0 = population$AGE_AT_MENARCHE
-  a1 = a0 + population$AGE_AT_FIRST_BIRTH
-  a2 = a1 + population$AGE_AT_MENOPAUSE
-  a3 = a3 + population$AGE
-
-  population$AGE_AT_FIRST_BIRTH = ifelse(population$PARITY, a2, 0)
-  population$AGE_AT_MENOPAUSE = ifelse(population$MENOPAUSE_STATUS, a3,0)
-  population$AGE = a3
-
-  population
-}
-
 
 
 validate_bc_risk_input = function(population) {
