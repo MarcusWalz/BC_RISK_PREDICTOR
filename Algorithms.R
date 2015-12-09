@@ -1,46 +1,38 @@
+source("Data.R") # For validation functions
+
+# Global variable with list of algorithms
+bc_risk_algorithms = list()
+
+add_algorithm = function(name, f, description="") {
+  bc_risk_algorithms[[name]] = list(name=name, description=description, func=f)
+  bc_risk_algorithms <<- bc_risk_algorithms
+}
+
 source("Gail89.R")
+add_algorithm("Gail89", Gail89, "")
+source("CAREGail.R") 
+add_algorithm("CAREGail", CAREGail, "")
+source("Rosner96.R")
+add_algorithm("Rosner96", Rosner96, "")
 
-# TODO Table of Algorithms 
-bc_risk_algorithms = rbind(
-    list(name="Gail89"
-        , descriptions=""
-        , citation="")
-)
+# print(bc_risk_algorithms)
 
-
-
-
-validate_bc_risk_input = function(population) {
-
-  pop = population
-  if(! "PARITY" %in% population) {
-    pop$PARITY = 
-      !( is.na(pop$AGE_AT_FIRST_BIRTH) | pop$AGE_AT_FIRST_BIRTH == 0)
-  }
-  if(! "MENOPAUSE_STATUS" %in% population) {
-    pop$MENOPAUSE_STATUS = 
-      !( is.na(pop$AGE_AT_MENOPAUSE) | pop$AGE_AT_MENOPAUSE == 0)
-  }
-
-  pop$AGE_AT_FIRST_BIRTH[!pop$PARITY] = 0
-  pop$AGE_AT_MENOPAUSE[!pop$MENOPAUSE_STATUS] = 0
-
-
-  pop
-
+# list installed algorithms
+list_algorithms = function() {
+  names(bc_risk_algorithms)
 }
 
 # Calculate individual absolute breast cancer risk on a population
 bc_absolute_risk = function(algorithm, population, years=5) {
-  if(is.character("algorithm")) {
-    if(algorithm %in% bc_risk_algorithm) {
-      algorithm = get(algorithm)
-    }
-  } else if(!is.function(algorithm)) {
-    stop("Not a valid algorithm")
+  if(is.character(algorithm) && algorithm %in% list_algorithms()) {
+      algorithm = bc_risk_algorithms[[algorithm]]$func
   }
 
-  algorithm(population, years)
+  if(!is.function(algorithm)) {
+    stop(paste("bc_risk algorithm:", algorithm, "not found"))
+  }
+
+  do.call(algorithm, list(population=population, years=years))
 }
 
 # Calculate expected number of breast cancer cases to occur for a population

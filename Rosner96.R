@@ -20,8 +20,13 @@
 #####################################################################################
 #Reference: Code is based on rosner2.R, found on the LPM Github
 
-Rosner96_LPM1<-function(avatars, years = 5){
+source("AlgorithmUtil.R")
 
+Rosner96 <- function(avatars, years = 5){
+    required_fields = c("AGE", "MENOPAUSE_STATUS", "AGE_AT_MENOPAUSE", "PARITY", "AGE_AT_FIRST_BIRTH")
+
+    has_required_fields("Rosner96", avatars, required_fields)
+    
 	  alpha  = -9.687
 	  beta_0 =  0.048
 	  beta_1 =  0.081
@@ -41,7 +46,7 @@ Rosner96_LPM1<-function(avatars, years = 5){
     # birth index = b
     # TODO support multiple births
     b_1    = avatars$PARITY # of 1st birth
-    t_1    = avatars$AGE_OF_FIRST_BIRTH
+    t_1    = avatars$AGE_AT_FIRST_BIRTH
     b      = ( t_star - t_1 ) * b_1
  
  
@@ -60,22 +65,21 @@ Rosner96_LPM1<-function(avatars, years = 5){
     apply(ar_risk_by_year,2,cum_ar)
 }
 
-# Calculate the prob of getting BC atleast once?
-# Is this correct. ar is a vector of absolute risks by year
-# I feel like I'm missing something major
+# Calculate the n year absolute risk using bayes rule
 cum_ar = function(ar) {
   if(!length(ar)) { return(0) }
   ar[1] + (1 - ar[1]) * cum_ar(ar[-1])
 }
   
+# TODO Move to test dir
 test_data = data.frame(
     AGE = c(45,60,70,110)
-  , AGE_OF_FIRST_BIRTH = 35
+  , AGE_AT_FIRST_BIRTH = 35
   , AGE_AT_MENARCHE = 10
   , AGE_AT_MENOPAUSE = 40 
   , PARITY = T
   , MENOPAUSE_STATUS = T
 )
 
-print(cbind(test_data,Rosner96_LPM1(test_data, years=5)))
+# print(cbind(test_data,Rosner96(test_data, years=5)))
 

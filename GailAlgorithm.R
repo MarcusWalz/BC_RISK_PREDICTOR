@@ -1,14 +1,12 @@
+source("AlgorithmUtil.R")
+
 # Converts our input to the format used in Gail papers
 gail_avatars = function(avatars) {
   # Convert to gail format. 
 
   # required fields 
-  req_fields =c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_BIRTHS", "FIRST_DEGREE_RELATIVES")
-
-  has_fields = req_fields %in% colnames(avatars)
-  if(!all(has_fields)) {
-    stop(paste("Can not use Gail, missing fields:", req_fields[!has_fields]))
-  }
+  required_fields = c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_FIRST_BIRTH", "FIRST_DEGREE_RELATIVES")
+  has_required_fields("Gail* Algorithm", avatars, required_fields)
 
 
   AGECAT = (avatars$AGE >= 50) + 0
@@ -18,11 +16,11 @@ gail_avatars = function(avatars) {
   NBIOPS = ifelse(avatars$BIOPSY == 0, 0,
                   ifelse(avatars$BIOPSY == 1, 1, 2))
   AGEFLB = ifelse(!avatars$PARITY, 2, 
-                  ifelse(avatars$AGE_AT_BIRTHS < 20, 0,
-                         ifelse(avatars$AGE_AT_BIRTHS >= 20 &
-                                avatars$AGE_AT_BIRTHS <  25, 1,
-                                ifelse(avatars$AGE_AT_BIRTHS >= 25 &
-                                       avatars$AGE_AT_BIRTHS <  30, 2, 3
+                  ifelse(avatars$AGE_AT_FIRST_BIRTH < 20, 0,
+                         ifelse(avatars$AGE_AT_FIRST_BIRTH >= 20 &
+                                avatars$AGE_AT_FIRST_BIRTH <  25, 1,
+                                ifelse(avatars$AGE_AT_FIRST_BIRTH >= 25 &
+                                       avatars$AGE_AT_FIRST_BIRTH <  30, 2, 3
                                        )))) 
 
   NUMREL = ifelse(avatars$FIRST_DEGREE_RELATIVES == 0, 0,
@@ -130,12 +128,12 @@ gail_relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50,
   S1_t = cumprod(exp(-1 * h1 * rr * widths))
   S2_t = cumprod(exp(-1 * h2      * widths))
 
-
   S1_t=append(1,S1_t)[1:length(h1)]
   S2_t=append(1,S2_t)[1:length(h1)]
 
   S1_a = S1_t[age_index]
   S2_a = S2_t[age_index]
+
 
   five_year_risks = cumsum(
        (1:(length(h1)) >= (age_index))
