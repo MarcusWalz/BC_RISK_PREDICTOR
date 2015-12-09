@@ -8,7 +8,7 @@ Predict indivdual 5, 10, 20 year absolute risks of developing breast cancer for 
 
 Predict the expected number of breast cancer cases in `my_population` over a 10 year period using Rosner96:
 
-    hazard_rate = bc_expected_incidents("Rosner96", my_population, years=10)
+    incidents = bc_expected_incidents("Rosner96", my_population, years=10)
 
 Predict the 5 year per-100,000 breast cancer incidence rate of `my_population` using the Gail89 algorithm:
 
