@@ -1,5 +1,7 @@
 
+# Assume AGES are offset s.t.:
 # AGE = AGE_AT_MENACHE + AGE_AT_FIRST_BIRTH + AGE_AT_MENOPAUSE + AGE
+# Helpful for generating random avatars.
 undelta_age = function(population) {
 
   a0 = round(population$AGE_AT_MENARCHE)
@@ -17,6 +19,24 @@ undelta_age = function(population) {
 
 
 risk_factor = factor("low", "medium", "high")
+
+# Below are field characteristcs, it's a named list with
+# the following values:
+#   field - name of field(s)
+#   valid - validation function where input params are same as field
+#     returns descriptive error using stop(...) or False if there is an issue
+#   risk  - risk_factor calculator where input pararms are same as field
+#     returns either "low", "medium", or "high". This is used as a heuristic
+#     to help validate algoritm performance.
+#
+# Sometimes the realtionship between two fields needs to be
+# checked, (e.g. ensursing age is greater than age at menarche)
+# in which case field is a vector of strings (i.e. characters in R)
+# and valid and risk functions recieve. See AGE_AND_AGE_AT_MENARCHE for an
+# example.
+
+# valid and risk functions are only executed if all fields are present.
+#
 
 AGE_FIELD = 
   list( field = "AGE"
@@ -137,6 +157,12 @@ BC_RISK_FIELD_DESC =
   )
 
 print(BC_RISK_FIELD_DESC)
+
+
+# Ensures that a population complies with input format, 
+#   if not helpful messages are printed to stderr.
+# Stops execution, if an issue is discovered, unless warn=TRUE, in which case
+# a warning is issued and the function returns False when an error is detected.
 
 validate_bc_risk_input = function(population, warn=F) {
   errors = FALSE
