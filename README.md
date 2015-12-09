@@ -28,15 +28,18 @@ All algorithms are designed to use the same input format. However, not all
 variables are required for every algorithm. Each Breast Cancer Risk algorithm 
 checks that the required variables are supplied prior to execution. 
 
-The function `preprocess_input(input)` (todo) should be used to validate input and infer
-missing variables:
+The function `preprocess_population(population)` does the following:
 
-1. Ensures `AGE_AT_MENACHE` &lt; `AGE_AT_FIRST_BRITH` &lt; `AGE_AT_MENOPAUSE`
-  &lt; `AGE`.
-2. Constructs `PARITY` and `MENOPAUSE_STATUS` if absent, or checks that `AGE_AT_FIRST_BIRTH` 
+1. Constructs `PARITY` and `MENOPAUSE_STATUS` if absent, or checks that `AGE_AT_FIRST_BIRTH` 
   and `AGE_AT_MENOPAUSE` are consistent with `PARITY` and `MENOPAUSE_STATUS`.
-3. Converts `NA`s in `AGE_AT_FIRST_BIRTH` and `AGE_AT_MENOPAUSE` to `0`s. 
-4. Checks, all variables are of the correct type.
+2. Converts `NA`s in `AGE_AT_FIRST_BIRTH` and `AGE_AT_MENOPAUSE` to `0`s. 
+
+The function `validate_population(population)` ensures that:
+
+1. Input is in the correct format.
+2. Members of a population are logical; e.g. `AGE` is
+  greater than or equal `AGE_AT_FIRST_BIRTH`.
+
 
 <dl>
   <dt>AGE</dt>
