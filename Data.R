@@ -20,7 +20,7 @@ preprocess_population = function(population) {
         population[,column] = population[,column] != 0
       }
 
-      popution[!population[,column], column] = 0
+      population[!population[,column], column] = 0
     } 
 
     # 2nd set NA's to 0  
@@ -198,7 +198,7 @@ print(BC_RISK_COLUMN_DESC)
 # Stops execution, if an issue is discovered, unless warn=TRUE, in which case
 # a warning is issued and the function returns False when an error is detected.
 
-validate_bc_risk_input = function(population, warn=F) {
+validate_population = function(population, warn=F) {
   errors = FALSE
 
   for(column in BC_RISK_COLUMNS) {
@@ -251,5 +251,5 @@ random_population = function(n = 1000) {
     )
 }
 
-#random_population(300)
-validate_bc_risk_input(random_population(300))
+# preprocess_population(random_population(300))
+# validate_population(random_population(300))
