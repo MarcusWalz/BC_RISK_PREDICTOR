@@ -2,13 +2,18 @@
 
 Let `my_population` be a dataframe in the format described [below](#input-format).
 
-Calculate indivdual 5, 10, 20 year absolute risk of developing breast cancer for a population (TODO):
+Predict indivdual 5, 10, 20 year absolute risks of developing breast cancer for a population:
 
-    per_patient_risk = bc_risk("Gail89", my_population, years=c(5,10,20))
+    per_patient_risk = bc_absolute_risk("Gail89", my_population, years=c(5,10,20))
 
-Calculate the 5 year per 100,000 breast cancer incidence rate of a population according to the Gail89 model (TODO):
+Predict the expected number of breast cancer cases in `my_population` over a 10 year period using Rosner96:
 
-    expected_cases = hazard_rate("Gail89", my_population, years=5)
+    hazard_rate = bc_expected_incidents("Rosner96", my_population, years=10)
+
+Predict the 5 year per-100,000 breast cancer incidence rate of `my_population` using the Gail89 algorithm:
+
+    hazard_rate = bc_hazard_rate("Gail89", my_population, years=5)
+
 
 Supported Algorithms 
 -------------------
