@@ -1,3 +1,37 @@
+# preprocess_population handles the redundent variables PARITY and
+# MENOPAUSE status so they're consistent with AGE_AT_FIRST_BIRTH and 
+#   AGE_AT_MENOPAUSE.
+preprocess_population = function(population) {
+ 
+  for(column in c("PARITY", "MENOPAUSE_STATUS")) {
+    age_column = ifelse(column == "PARITY", "AGE_AT_FIRST_BIRTH", "AGE_AT_MENOPAUSE")
+
+    # Check to make sure column is actually present.
+    if(! (age_column %in% colnames(population))) {
+      warning(paste(column, "not in input population."))
+      next
+    }
+
+    # 1st Make Sure that AGE_AT_FIRST_BIRTH and AGE_AT_MENOPAUSE conform 
+    #   to PARITY and MENOPAUSE_STATUS if they're present:
+    if(column %in% colnames(population)) {
+      # make parity trues and falses 
+      if(!is.logical(population[,column])) {
+        population[,column] = population[,column] != 0
+      }
+
+      popution[!population[,column], column] = 0
+    } 
+
+    # 2nd set NA's to 0  
+    population[is.na(population[,age_column]),age_column] = 0
+
+    # 3rd set parity to false if AGE_AT_FIRST_BIRTH or AGE_AT_MENOPAUSE are zero
+    population[,column] = population[,age_column] == 0
+  }
+
+  population
+}
 
 # Assume AGES are offset s.t.:
 # AGE = AGE_AT_MENACHE + AGE_AT_FIRST_BIRTH + AGE_AT_MENOPAUSE + AGE
@@ -20,26 +54,26 @@ undelta_age = function(population) {
 
 risk_factor = factor("low", "medium", "high")
 
-# Below are field characteristcs, it's a named list with
+# Below are column characteristcs, it's a named list with
 # the following values:
-#   field - name of field(s)
-#   valid - validation function where input params are same as field
+#   column - name of column(s)
+#   valid - validation function where input params are same as column
 #     returns descriptive error using stop(...) or False if there is an issue
-#   risk  - risk_factor calculator where input pararms are same as field
+#   risk  - risk_factor calculator where input pararms are same as column
 #     returns either "low", "medium", or "high". This is used as a heuristic
 #     to help validate algoritm performance.
 #
-# Sometimes the realtionship between two fields needs to be
+# Sometimes the realtionship between two columns needs to be
 # checked, (e.g. ensursing age is greater than age at menarche)
-# in which case field is a vector of strings (i.e. characters in R)
+# in which case column is a vector of strings (i.e. characters in R)
 # and valid and risk functions recieve. See AGE_AND_AGE_AT_MENARCHE for an
 # example.
 
-# valid and risk functions are only executed if all fields are present.
+# valid and risk functions are only executed if all columns are present.
 #
 
-AGE_FIELD = 
-  list( field = "AGE"
+AGE_COLUMN = 
+  list( column = "AGE"
       , description = "Patient Age. Numeric"
       , valid = function(AGE) {
         is.numeric(AGE) && all(AGE > 0)
@@ -49,8 +83,8 @@ AGE_FIELD =
       }
   )
 
-AGE_AT_MENARCHE_FIELD = 
-  list( field = "AGE_AT_MENARCHE"
+AGE_AT_MENARCHE_COLUMN = 
+  list( column = "AGE_AT_MENARCHE"
       , description = "Age at menarche. Numeric."
       , valid = function(AGE_AT_MENARCHE) {
         is.numeric(AGE_AT_MENARCHE)
@@ -60,8 +94,8 @@ AGE_AT_MENARCHE_FIELD =
       }
       )
 
-AGE_AT_MENOPAUSE_FIELD = 
-  list( field = "AGE_AT_MENOPAUSE"
+AGE_AT_MENOPAUSE_COLUMN = 
+  list( column = "AGE_AT_MENOPAUSE"
       , description = "Age at menopause. Numeric"
       , valid = function(AGE_AT_MENOPAUSE) {
         is.numeric(AGE_AT_MENOPAUSE)
@@ -71,31 +105,31 @@ AGE_AT_MENOPAUSE_FIELD =
       }
       )
 
-# Multifield validator, checks that AGE > AGE_AT_MENARCHE
-AGE_AND_AGE_AT_MENARCHE_FIELD =
-  list( field = c("AGE", "AGE_AT_MENARCHE")
+# Multicolumn validator, checks that AGE > AGE_AT_MENARCHE
+AGE_AND_AGE_AT_MENARCHE_COLUMN =
+  list( column = c("AGE", "AGE_AT_MENARCHE")
       , description = "AGE should be greater than AGE_AT_MENARCHE."
       , valid = function(AGE, AGE_AT_MENARCHE) {
         all(AGE > AGE_AT_MENARCHE) 
       }
       )
 
-# filter null values in a field
+# filter null values in a column
 filter_null = function(l) {
   Filter( function(x) !is.null(x), l)
 }
 
-binary_to_field = function(name, predicate, risk=NULL) {
+binary_to_column = function(name, predicate, risk=NULL) {
   filter_null(
-    list( field = name
+    list( column = name
         , description = paste("1 or T if", predicate, ", 0 or F otherwise.") 
-        , valid = function(field) {
-          is.logical(field) || all( field == 0 | field == 1) 
+        , valid = function(column) {
+          is.logical(column) || all( column == 0 | column == 1) 
         }
         , risk = { 
             if( !is.null(risk) ) {
-              function(field) {
-                risk[as.numeric(field)]
+              function(column) {
+                risk[as.numeric(column)]
               }
             } else {
               NULL
@@ -105,12 +139,12 @@ binary_to_field = function(name, predicate, risk=NULL) {
   )
 }
 
-PARITY_FIELD           = binary_to_field("PARITY", "women has had a child")
-MENOPAUSE_STATUS_FIELD = binary_to_field("MENOPAUSE_STATUS", "women has menopause")
+PARITY_COLUMN           = binary_to_column("PARITY", "women has had a child")
+MENOPAUSE_STATUS_COLUMN = binary_to_column("MENOPAUSE_STATUS", "women has menopause")
 
-factor_to_field = function(name, factor, risk = NULL, allow_na=F) {
+factor_to_column = function(name, factor, risk = NULL, allow_na=F) {
   filter_null(
-    list( field = name
+    list( column = name
         , description = paste(
           name, "as a factor, either:", paste(levels(factor), collapse=", ")
           , ifelse(allow_na, "NA.", ".")
@@ -120,8 +154,8 @@ factor_to_field = function(name, factor, risk = NULL, allow_na=F) {
         }
         , risk = { 
             if( !is.null(risk) ) {
-              function(field) {
-                risk[as.numeric(field)]
+              function(column) {
+                risk[as.numeric(column)]
               }
             } else {
               NULL
@@ -134,29 +168,29 @@ factor_to_field = function(name, factor, risk = NULL, allow_na=F) {
 
 RACE_FACTOR = factor(c("Asian", "Black", "Hispanic", "White"))
 
-RACE_FIELD = factor_to_field("RACE", RACE_FACTOR)
+RACE_COLUMN = factor_to_column("RACE", RACE_FACTOR)
 
-BC_RISK_FIELDS =
-  list( AGE_FIELD
-      , AGE_AT_MENARCHE_FIELD
-      , AGE_AT_MENOPAUSE_FIELD
-      , AGE_AND_AGE_AT_MENARCHE_FIELD
-      , RACE_FIELD
-      , PARITY_FIELD
-      , MENOPAUSE_STATUS_FIELD
+BC_RISK_COLUMNS =
+  list( AGE_COLUMN
+      , AGE_AT_MENARCHE_COLUMN
+      , AGE_AT_MENOPAUSE_COLUMN
+      , AGE_AND_AGE_AT_MENARCHE_COLUMN
+      , RACE_COLUMN
+      , PARITY_COLUMN
+      , MENOPAUSE_STATUS_COLUMN
       )
 
-BC_RISK_FIELD_DESC = 
-  do.call(rbind, Map(function(field) {
-      data.frame( row.names      = paste(field$field, collapse=", ")
-                , has_validator  = "valid" %in% names(field)
-                , is_risk_factor = "risk" %in% names(field)
-                , description    = field$description
+BC_RISK_COLUMN_DESC = 
+  do.call(rbind, Map(function(column) {
+      data.frame( row.names      = paste(column$column, collapse=", ")
+                , has_validator  = "valid" %in% names(column)
+                , is_risk_factor = "risk" %in% names(column)
+                , description    = column$description
                 )
-    }, BC_RISK_FIELDS)
+    }, BC_RISK_COLUMNS)
   )
 
-print(BC_RISK_FIELD_DESC)
+print(BC_RISK_COLUMN_DESC)
 
 
 # Ensures that a population complies with input format, 
@@ -167,20 +201,20 @@ print(BC_RISK_FIELD_DESC)
 validate_bc_risk_input = function(population, warn=F) {
   errors = FALSE
 
-  for(field in BC_RISK_FIELDS) {
-    if( all(field$field %in% colnames(population)) && "valid" %in% names(field)) {
+  for(column in BC_RISK_COLUMNS) {
+    if( all(column$column %in% colnames(population)) && "valid" %in% names(column)) {
       tryCatch( 
         {
-          is_valid_column = do.call(field$valid, 
-            lapply(field$field, function(f) population[, f])
+          is_valid_column = do.call(column$valid, 
+            lapply(column$column, function(f) population[, f])
           )
           if( !is_valid_column ) { stop("Column did not pass validator") }
         }
         , error = function(err) {
           write(paste("Input error in"
-                     , paste(field$field, collapse=", ")
+                     , paste(column$column, collapse=", ")
                      , "--"
-                     , field$description), stderr())
+                     , column$description), stderr())
           errors <<- TRUE
         })
     }
