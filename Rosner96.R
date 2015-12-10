@@ -62,7 +62,7 @@ Rosner96 <- function(population, years = 5){
 
     # combine absolute risk by year
 
-    out = as.matrix(t(apply(ar_risk_by_year,2,cumsum)))[,years]
+    out = as.matrix(t(apply(ar_risk_by_year,2,cumsum))[,years,drop=FALSE])
     colnames(out) = paste("AR", years)
 
     out

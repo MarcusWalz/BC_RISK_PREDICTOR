@@ -37,7 +37,7 @@ bc_risk_algorithm = function(algorithm, population, years=5, filter_output="*", 
   }
 
   # filter columns by regex 
-  out=out[,grep(filter_output, colnames(out))]
+  out=out[,grep(filter_output, colnames(out)),drop=FALSE]
 
   if(ncol(out) == 0) {
     stop(paste("algorithm:", algorithm,  "does not return anything matching", filter_output))
