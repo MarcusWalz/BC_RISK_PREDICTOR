@@ -14,7 +14,7 @@ register_algorithm = function(name, f, ar, rr, req_fields) {
 }
 
 get_algorithm = function(name) {
-  if(! name %in% bc_risk_algorithms) {
+  if(! name %in% names(bc_risk_algorithms)) {
     stop("bc risk algorithm", name, "not registered")
   }
 
@@ -22,7 +22,7 @@ get_algorithm = function(name) {
 }
 
 check_required_fields = function(name, input) {
-    required_algorithm=get_algorithm(name)$req_fields
+    required_fields=get_algorithm(name)$req_fields
 
     has_fields = required_fields %in% colnames(input)
     if(!all(has_fields) ) {

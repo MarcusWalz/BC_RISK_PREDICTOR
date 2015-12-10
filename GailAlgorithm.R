@@ -1,13 +1,10 @@
 source("AlgorithmUtil.R")
 
+gail_fields = c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_FIRST_BIRTH", "FIRST_DEGREE_RELATIVES")
+
 # Converts our input to the format used in Gail papers
 gail_avatars = function(avatars) {
   # Convert to gail format. 
-
-  # required fields 
-  required_fields = c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_FIRST_BIRTH", "FIRST_DEGREE_RELATIVES")
-  has_required_fields("Gail* Algorithm", avatars, required_fields)
-
 
   AGECAT = (avatars$AGE >= 50) + 0
   AGEMEN = ifelse(avatars$AGE_AT_MENARCHE >= 14, 0,

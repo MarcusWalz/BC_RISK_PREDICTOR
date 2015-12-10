@@ -23,7 +23,8 @@
 source("AlgorithmUtil.R")
 
 
-Rosner96 <- function(avatars, years = 5){
+Rosner96 <- function(population, years = 5){
+    avatars = population
 
 	  alpha  = -9.687
 	  beta_0 =  0.048
@@ -60,9 +61,8 @@ Rosner96 <- function(avatars, years = 5){
     )
 
     # combine absolute risk by year
-    print(ar_risk_by_year)
 
-    out = t(apply(ar_risk_by_year,2,cumsum))[,years]
+    out = as.matrix(t(apply(ar_risk_by_year,2,cumsum)))[,years]
     colnames(out) = paste("AR", years)
 
     out
