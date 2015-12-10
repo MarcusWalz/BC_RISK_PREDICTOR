@@ -49,3 +49,5 @@ gail89 =
       )
 
 Gail89 = function(avatars, years) { gail_algorithm(avatars, years, gail89) } 
+
+register_algorithm("Gail89", Gail89, T, T, gail_fields)

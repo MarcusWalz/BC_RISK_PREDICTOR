@@ -22,11 +22,9 @@
 
 source("AlgorithmUtil.R")
 
-Rosner96 <- function(avatars, years = 5){
-    required_fields = c("AGE", "MENOPAUSE_STATUS", "AGE_AT_MENOPAUSE", "PARITY", "AGE_AT_FIRST_BIRTH")
 
-    has_required_fields("Rosner96", avatars, required_fields)
-    
+Rosner96 <- function(avatars, years = 5){
+
 	  alpha  = -9.687
 	  beta_0 =  0.048
 	  beta_1 =  0.081
@@ -36,7 +34,7 @@ Rosner96 <- function(avatars, years = 5){
 	  beta_5 = -0.00020
 
     # t is current age 
-    t = sapply(avatars$AGE, function(t) t:(t+years-1))
+    t = sapply(avatars$AGE, function(t) t:(t+max(years)-1))
 
     t_0    = avatars$AGE_AT_MENARCHE
     m      = avatars$MENOPAUSE_STATUS
@@ -62,8 +60,16 @@ Rosner96 <- function(avatars, years = 5){
     )
 
     # combine absolute risk by year
-    apply(ar_risk_by_year,2,cum_ar)
+    print(ar_risk_by_year)
+
+    out = t(apply(ar_risk_by_year,2,cumsum))[,years]
+    colnames(out) = paste("AR", years)
+
+    out
 }
+
+rosner_fields = c("AGE", "MENOPAUSE_STATUS", "AGE_AT_MENOPAUSE", "PARITY", "AGE_AT_FIRST_BIRTH")
+register_algorithm("Rosner96", Rosner96, T, F, rosner_fields)
 
 # Calculate the n year absolute risk using bayes rule
 cum_ar = function(ar) {
@@ -81,5 +87,5 @@ test_data = data.frame(
   , MENOPAUSE_STATUS = T
 )
 
-# print(cbind(test_data,Rosner96(test_data, years=5)))
+print(cbind(test_data,Rosner96(test_data, years=c(5,10))))
 

@@ -16,6 +16,7 @@ print(CAREGail_params)
 
 CAREGail = function(avatars, time) gail_algorithms(avatars, time, CAREGail_params)
 
+register_algorithm("CAREGail", CAREGail, T, T, gail_fields)
 # this calculates 20 year absolute risk for a 30yo with a relative risk of 10
 # according to the CAREGail algorithm.
 # gail_relative_risk_to_absolute_risk(30, 20, 10, 10, CAREGail_params$hazards)
