@@ -82,7 +82,7 @@ Creating Algorithms
 -------------------------------
 
 At minimum, a breast cancer risk algorithm is an R function which takes two
-paramaters, `population` a dataframe in the format described above and `years`
+arguments, `population` a dataframe in the format described above and `years`
 a vector of how many years in the future you with to project absolute risk.
 E.g. `years = 5` will calculate the 5 year absolute risk, and `years = c(5,10)`
 will calculate the 5 and 10 year absolute risk. Additional arguments can
@@ -97,25 +97,42 @@ If, for whatever reason it's impossible to calculate absolute risk for a patient
 fire off a `warning()` explaining why and return `NA`. 
 
 In addition, we use the function `register_algorithm` in order to bind metadata to
-the algorithm which allows it to be used by helper functions in `Algorithms.R` 
-which checks that the input is sufficient and that algorithms produce the 
-desired output.
+the algorithm which allows it to be used by helper functions in `Algorithms.R`. 
+These helper functions check that the input is sufficient and that algorithms
+produce the desired output before executing an algorithm.
 
 Here is a simple algorithm:
 
-    source("AlgorithmUtils.R")
+```R
+source("AlgorithmUtils.R")
 
-    my_algorithm = function(population, years) {
-      ... # let RR be a vector of relative risks and
-          # let ARs be a matrix of absolute risks
-      # set colnames
-      colnames(ARs) = paste("AR", years)
-      cbind(RR, ARs)
-    }
+my_algorithm = function(population, years) {
+  ... # let RR be a vector of relative risks and
+      # let ARs be a matrix of absolute risks
+  # set colnames
+  colnames(ARs) = paste("AR", years)
+  cbind(RR, ARs)
+}
 
-    register_algorithm("my_algorirthm" the name you wish to call the alg from
-                      , my_algorithm,  the risk alg function itself
-                      , AR = TRUE  # TRUE iff risk alg returns absolute risks
-                      , RR = TRUE  # TRUE iff risk alg returns relative risks
-                      , req_fields = c("AGE", "BIOPSY") # Fields requierd to use alg
-                      )
+register_algorithm("my_algorirthm" the name you wish to call the alg from
+                  , my_algorithm,  the risk alg function itself
+                  , AR = TRUE  # TRUE iff risk alg returns absolute risks
+                  , RR = TRUE  # TRUE iff risk alg returns relative risks
+                  , req_fields = c("AGE", "BIOPSY") # Fields requierd to use alg
+                  )
+
+and running:
+
+```R
+> my_algorithm(my_popualtion, c(5,10))
+```
+
+will produce a table like this:
+
+|  | RR | AR 5 | AR 10  |
+|--|----|------|--------|
+|1 |  3 |  .30 |  .4    |
+|2 |  4 |  .28 |  .8    |
+
+
+```
