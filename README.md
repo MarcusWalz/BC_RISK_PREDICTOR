@@ -77,3 +77,45 @@ The function `validate_population(population)` ensures that:
   </dd>
 
 </dl>
+
+Creating Algorithms
+-------------------------------
+
+At minimum, a breast cancer risk algorithm is an R function which takes two
+paramaters, `population` a dataframe in the format described above and `years`
+a vector of how many years in the future you with to project absolute risk.
+E.g. `years = 5` will calculate the 5 year absolute risk, and `years = c(5,10)`
+will calculate the 5 and 10 year absolute risk. Additional arguments can
+be provided as long as default values are set.
+
+An algorithm needs to return a matrix or dataframe with named columns. Where `RR` 
+is the patients current relative risk, `AR 5` is the five absolute risk, and `AR 10`
+is the ten year asolute risk. To prevent R from reducing a matrix to vector
+remember to subset using: `[,,reduce=F]`. Additional columns can be provided.
+
+If, for whatever reason it's impossible to calculate absolute risk for a patient
+fire off a `warning()` explaining why and return `NA`. 
+
+In addition, we use the function `register_algorithm` in order to bind metadata to
+the algorithm which allows it to be used by helper functions in `Algorithms.R` 
+which checks that the input is sufficient and that algorithms produce the 
+desired output.
+
+Here is a simple algorithm:
+
+    source("AlgorithmUtils.R")
+
+    my_algorithm = function(population, years) {
+      ... # let RR be a vector of relative risks and
+          # let ARs be a matrix of absolute risks
+      # set colnames
+      colnames(ARs) = paste("AR", years)
+      cbind(RR, ARs)
+    }
+
+    register_algorithm("my_algorirthm" the name you wish to call the alg from
+                      , my_algorithm,  the risk alg function itself
+                      , AR = TRUE  # TRUE iff risk alg returns absolute risks
+                      , RR = TRUE  # TRUE iff risk alg returns relative risks
+                      , req_fields = c("AGE", "BIOPSY") # Fields requierd to use alg
+                      )
