@@ -179,7 +179,8 @@ gail_algorithm = function( avatars              # DF of avatars
       , my_fit$hazards) 
     }
   ))
-  colnames(absolute_risks) = paste(years, "year AR")
+  absolute_risks = as.matrix(absulte_risks)
+  colnames(absolute_risks) = paste("AR", year)
 
   cbind(relative_risks, absolute_risks)
 

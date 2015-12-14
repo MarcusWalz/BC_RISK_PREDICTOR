@@ -29,11 +29,11 @@ bc_risk_algorithm = function(algorithm, population, years=5, filter_output="*", 
 
   # return only absolute risk and/or relative risk
   if(filter_output == "AR") {
-    filter_output = "AR*"
+    filter_output = "^AR [1-9][0-9]?$"
   } else if(filter_output == "RR") {
-    filter_output = "RR*"
+    filter_output = "^RR$"
   } else if(filter_output == "AR+RR" || filter_output == "RR+AR") {
-    filter_output = "(AR|RR)*"
+    filter_output = "^(AR [1-9][0-9]?)|(RR)$"
   }
 
   # filter columns by regex 
