@@ -120,6 +120,7 @@ register_algorithm("my_algorirthm" the name you wish to call the alg from
                   , RR = TRUE  # TRUE iff risk alg returns relative risks
                   , req_fields = c("AGE", "BIOPSY") # Fields requierd to use alg
                   )
+```
 
 and running:
 
