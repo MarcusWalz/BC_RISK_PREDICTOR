@@ -18,8 +18,10 @@ Predict the 5 year per-100,000 breast cancer incidence rate of `my_population` u
 Supported Algorithms 
 -------------------
 
-* Gail89 --- TODO
-* Tice08 --- TODO
+* Gail89
+* CARE-Gail
+* Rosner96
+* Tice08
 
 Input Format
 -------------------
@@ -71,10 +73,15 @@ The function `validate_population(population)` ensures that:
   <dt>RACE</dt>
   <dd>Either <code>White</code>, <code>Black</code>, <code>Hispanic</code>, or <code>Asian</code>.</dd>
 
-  <dt>Biopsy<dt>
+  <dt>BIOPSY<dt>
   <dd>Number of breast biopsy's a patient has had. Either numeric or <code>"0"</code>, <code>"1"</code>, 
     <code>">=2"</code>.
   </dd>
+  <dt>HYPERPLASIA</dt>
+  <dd><code>TRUE</code> if atypical hyperplasia was present in at least one 
+    breast biopsy. <code>FALSE</code> if it's known that atypical hyperplasia 
+    was not present in any biopsy. <code>NA</code> if patient has had no 
+    biopsy or the hyperplasia status is unknown.</dd>
 
 </dl>
 
