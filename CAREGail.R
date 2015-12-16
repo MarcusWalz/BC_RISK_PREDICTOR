@@ -27,9 +27,17 @@ CAREGail_params = list( hazards = data.frame(cutpoints, h1_star, h2, F, width)
 
 print(CAREGail_params)
 
-CAREGail = function(avatars, time) gail_algorithms(avatars, time, CAREGail_params)
+CAREGail = function(population, time) {
+  # CAREGail has two categories for AGEMEN, not 3 like Gail89, hack to fix:
+  population$AGE_AT_MENARCHE = ifelse(population$AGE_AT_MENARCHE <= 13,  13,14)  
+  gail_algorithm(population, time, CAREGail_params)
+}
 
 register_algorithm("CAREGail", CAREGail, T, T, gail_fields)
+
+test=data.frame(AGE=30, AGE_AT_MENARCHE=14, FIRST_DEGREE_RELATIVES=1, BIOPSY=1, PARITY=1, AGE_AT_FIRST_BIRTH=19)
+CAREGail(test, c(5,30))
 # this calculates 20 year absolute risk for a 30yo with a relative risk of 10
+
 # according to the CAREGail algorithm.
 # gail_relative_risk_to_absolute_risk(30, 20, 10, 10, CAREGail_params$hazards)

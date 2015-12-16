@@ -1,5 +1,7 @@
 # TODO Use Gail model with constants found in BCRAT source code.
 
+source("GailAlgorithm.R")
+
 
 cutpoints = c(20,25,30,35,40,45,50,55,60,65,70,75,80,85)
 
@@ -51,20 +53,47 @@ aa=c(0.00000000000000, 0.00000000000000, 0.07499257592975, 0.55263612260619, 0.2
 reg_cofs = cbind(wbh,wbh,aa,aa,aa,aa,aa,aa)
 colnames(reg_cofs) = cols
 
-print(h1_stars)
-print(h2s)
-print(reg_cofs)
 AA_F = c(0.47519806426735, 0.50316401683903)
-Fs = cbind(c(0.5788413, 0.5788413)
-, c(0.4145300, 0.4227500)
+Fs = cbind(
+  c( 0.5788413, 0.5788413)
 , c(0.72949880, 0.74397137)
-, c(0.5788413, 0.5788413)
+, c( 0.5788413, 0.5788413)
 , c(1.0, 1.0)
 , c(1.0, 1.0)
 , c(1.0, 1.0)
-, AA_F,  AA_F,  AA_F,  AA_F,  AA_F )
+, AA_F,  AA_F,  AA_F,  AA_F,  AA_F, AA_F )
 
 colnames(Fs) = cols
-rownames(Fs) = c("<50", ">=50")
 
 print(Fs)
+
+bcrat_constant_finder = function(RACE,...) {
+  h1_star = h1_stars[,RACE]
+  h2      = h2s[,RACE]
+  F       = Fs[ifelse(cutpoints < 50, 1, 2), RACE]
+  list( hazards=data.frame(cutpoints,h1_star,h2,F,width=5)
+      , cof=reg_cofs[,RACE]
+      )
+}
+
+
+BCRAT = function(population, time) {
+  gail_algorithm(population, time, bcrat_constant_finder)
+}
+
+source("CAREGail.R")
+
+
+test  = data.frame(
+  AGE = 40
+, AGE_AT_MENARCHE = 14
+, AGE_AT_FIRST_BIRTH = 25
+, FIRST_DEGREE_RELATIVES = 2
+, BIOPSY = 0
+, PARITY = T
+, RACE = "White")
+
+print(test)
+
+BCRAT(test, 5)
+CAREGail(test, 5)

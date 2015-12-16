@@ -1,5 +1,11 @@
 source("AlgorithmUtil.R")
 
+superapply = function(df, FUN) {
+  args=list(FUN=FUN)
+  args=append(args,Map(function(c) df[,c], colnames(df)))
+  do.call( mapply, args )
+}
+
 gail_fields = c("AGE", "AGE_AT_MENARCHE", "BIOPSY","PARITY", "AGE_AT_FIRST_BIRTH", "FIRST_DEGREE_RELATIVES")
 
 # Converts our input to the format used in Gail papers
@@ -33,15 +39,19 @@ gail_avatars = function(avatars) {
 #  RR_GTE_50: avatars relative relative risk for ages 50 or older
 gail_rr = function(avatars, fit = Gail89){
   # if avatar's are not in Gail format, convert it
-  if(!all(c("AGECAT", "AGEMEN", "NBIOPS","AGEFLB", "NUMREL") %in% colnames(avatars))) {
-    avatars = gail_avatars(avatars)
-  }
+#   if(!all(c("AGECAT", "AGEMEN", "NBIOPS","AGEFLB", "NUMREL") %in% colnames(avatars))) {
+#  }
 
   # if we have fit finder, run avatars one-by-one
   if(is.function(fit)) {
-    return(apply(avatars, 1, function(avatar) {
-      gail_rr(avatar, fit(avatar))
-    }))
+    rrs = t(mapply(function(i) {
+      fit = do.call(fit, as.list(avatars[i,]))
+      gail_rr(avatars[i,], fit)
+    }, 1:nrow(avatars)))
+
+    colnames(rrs) <- c("RR", "RR_LT_50", "RR_GTE_50")
+
+    return(rrs)
   }
 
   # AGECAT = 0 
@@ -60,15 +70,19 @@ gail_rr = function(avatars, fit = Gail89){
   RR_LT_50  = exp(apply((fit$cof * c(0,1,1,1,1,0,0,1) * var), 2, sum))
   # AGECAT = 1 
   RR_GTE_50 = exp(apply((fit$cof * c(0,1,1,1,1,1,1,1) * var), 2, sum))
-  print(RR_GTE_50)
 
   RR = ifelse(avatars$AGECAT, RR_GTE_50, RR_LT_50)
 
-  # Project RR risk a population into the future
-  time = 15 
+
+  if("HYPERPLASIA" %in% colnames(avatars)) {
+    h = avatars$HYPERPLISA
+    hyperplasia = ifelse(is.na(h), 1, ifelse(h), 1.82, 0.93)
+  } else {
+    hyperplasia = 1
+  }
 
 
-  cbind(RR, RR_LT_50, RR_GTE_50)
+  cbind(RR, RR_LT_50, RR_GTE_50) * hyperplasia
 }
 
 
@@ -101,7 +115,6 @@ hazard_splice = function(hazards, years) {
 # Projected Absolute Risk
 gail_relative_risk_to_absolute_risk = function( age, years, rr_lt_50, rr_gte_50, hazards) {
   hazards = hazard_splice(hazards, append(age,age+years))
-#  print(hazards)
   h1 = hazards$h1_star * hazards$F
   h2 = hazards$h2
   cutpts = hazards$cutpoints
@@ -152,6 +165,9 @@ gail_algorithm = function( avatars              # DF of avatars
                          , fit    = gail89      # Fit finding function (e.g. ``)
                          , aux_rr = NULL        # auxilary relative risk function
                          ) {
+
+  avatars = cbind(avatars, gail_avatars(avatars))
+
   if(!is.null(aux_rr)) {
     if(is.function(aux_rr)) {
       aux_rr = aux_rr(avatars)
@@ -163,24 +179,30 @@ gail_algorithm = function( avatars              # DF of avatars
   } else {
     aux_rr = 1;
   }
+
   # calculate the relative risks 
   relative_risks = gail_rr(avatars, fit) * aux_rr 
-
-  absolute_risks=t(apply(cbind(avatars, relative_risks), 1,
-                         function(avatar) {
-                           avatar = data.frame(t(avatar))
-                           my_fit = ifelse(is.function(fit), fit(avatar), fit)
-      my_fit = fit
+  absolute_risks = t(mapply(
+    function(i, AGE, RR_LT_50, RR_GTE_50) {
+      if(is.function(fit)) {
+        fit = do.call(fit, as.list(avatars[i,]))
+        print(fit)
+      }
+      print(list(AGE, RR_LT_50, RR_GTE_50))
+      print(years)
       gail_relative_risk_to_absolute_risk(
-        avatar$AGE
+        AGE
       , years
-      , avatar$RR_LT_50
-      , avatar$RR_GTE_50
-      , my_fit$hazards) 
-    }
-  ))
-  absolute_risks = as.matrix(absulte_risks)
-  colnames(absolute_risks) = paste("AR", year)
+      , RR_LT_50
+      , RR_GTE_50
+      , fit$hazards
+      )
+    }, 1:nrow(avatars), avatars$AGE,
+      relative_risks[,"RR_LT_50"], relative_risks[,"RR_GTE_50"] )
+  )
+
+  absolute_risks = as.matrix(absolute_risks)
+  colnames(absolute_risks) = paste("AR", years)
 
   cbind(relative_risks, absolute_risks)
 
