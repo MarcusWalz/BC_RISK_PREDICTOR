@@ -41,14 +41,21 @@ colnames(h1_stars) = cols
 colnames(h2s) = cols
 
 wbh=cbind(
-c(-0.7494824600, 0.0108080720, 0.0940103059, 0.5292641686, 0.2186262218, 0.9583027845, -0.2880424830, -0.1908113865)
-, c(-0.3457169653, 0.0334703319, 0.2672530336, 0.1822121131, 0.0000000000, 0.4757242578, -0.1119411682, 0.0000000000)
-, c(-0.7494824600, 0.0108080720, 0.0940103059, 0.5292641686, 0.2186262218, 0.9583027845, -0.2880424830, -0.1908113865)
+c(-0.7494824600
+ , 0.0940103059
+ , 0.5292641686
+ , 0.2186262218
+ , 0.9583027845
+ , 0.0108080720
+ , -0.2880424830
+ , -0.1908113865)
+, c( -0.3457169653, 0.2672530336, 0.1822121131, 0.0000000000, 0.4757242578, 0.0334703319, -0.1119411682, 0.0000000000)
+, c(-0.7494824600, 0.0940103059, 0.5292641686, 0.2186262218, 0.9583027845, 0.0108080720, -0.2880424830, -0.1908113865)
 )
 
 # American Asian
 
-aa=c(0.00000000000000, 0.00000000000000, 0.07499257592975, 0.55263612260619, 0.27638268294593, 0.79185633720481, 0.00000000000000, 0.00000000000000)
+aa=c(0.00000000000000,  0.07499257592975, 0.55263612260619, 0.27638268294593, 0.79185633720481, 0 ,0.00000000000000, 0.00000000000000)
 
 reg_cofs = cbind(wbh,wbh,aa,aa,aa,aa,aa,aa)
 colnames(reg_cofs) = cols
@@ -65,7 +72,6 @@ Fs = cbind(
 
 colnames(Fs) = cols
 
-print(Fs)
 
 bcrat_constant_finder = function(RACE,...) {
   h1_star = h1_stars[,RACE]
@@ -81,19 +87,20 @@ BCRAT = function(population, time) {
   gail_algorithm(population, time, bcrat_constant_finder)
 }
 
-source("CAREGail.R")
-
-
 test  = data.frame(
-  AGE = 40
-, AGE_AT_MENARCHE = 14
-, AGE_AT_FIRST_BIRTH = 25
-, FIRST_DEGREE_RELATIVES = 2
-, BIOPSY = 0
-, PARITY = T
-, RACE = "White")
+  AGE = c(40, 45, 35, 43, 35,55)
+, AGE_AT_MENARCHE = c(14, 9, 12, 15, 14, 12)
+, AGE_AT_FIRST_BIRTH = c(25, 35, 30, 22, 27, 25)
+, FIRST_DEGREE_RELATIVES = c(2, 2, 1, 0, 1, 2)
+, BIOPSY = c(0, 2, 1, 0, 1, 1)
+, PARITY = c(T, T, T, T, T, F)
+, RACE = c("White", "White", "White", "White", "White", "White")
+, HYPERPLASIA = c(NA,NA,NA,NA, TRUE, FALSE)
+, tAR = c(.018, 0.132, 0.018, 0.006 ,0.016, 0.048)
+)
+
+# write.csv(test, file="BCRAT_BENCHMARK.csv")
 
 print(test)
 
-BCRAT(test, 5)
-CAREGail(test, 5)
+cbind(BCRAT(test, c(5,10)), test$tAR)

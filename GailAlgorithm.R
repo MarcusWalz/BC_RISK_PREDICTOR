@@ -75,8 +75,8 @@ gail_rr = function(avatars, fit = Gail89){
 
 
   if("HYPERPLASIA" %in% colnames(avatars)) {
-    h = avatars$HYPERPLISA
-    hyperplasia = ifelse(is.na(h), 1, ifelse(h), 1.82, 0.93)
+    h = avatars$HYPERPLASIA
+    hyperplasia = ifelse(is.na(h), 1, ifelse(h, 1.82, 0.93))
   } else {
     hyperplasia = 1
   }
@@ -186,10 +186,7 @@ gail_algorithm = function( avatars              # DF of avatars
     function(i, AGE, RR_LT_50, RR_GTE_50) {
       if(is.function(fit)) {
         fit = do.call(fit, as.list(avatars[i,]))
-        print(fit)
       }
-      print(list(AGE, RR_LT_50, RR_GTE_50))
-      print(years)
       gail_relative_risk_to_absolute_risk(
         AGE
       , years
