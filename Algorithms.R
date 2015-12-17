@@ -83,6 +83,7 @@ req_fields = function( ) {
                       , bc_risk_algorithms))
 
   colnames(tbl) <- all_fields
+  tbl = t(tbl)
 
   write.csv(tbl, file="required_fields.csv")
   print(tbl)
