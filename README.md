@@ -30,6 +30,8 @@ All algorithms are designed to use the same input format. However, not all
 variables are required for every algorithm. Each Breast Cancer Risk algorithm 
 checks that the required variables are supplied prior to execution. 
 
+A table of reqired fields is available [here](required_fields.csv) 
+
 The function `preprocess_population(population)` does the following:
 
 1. Constructs `PARITY` and `MENOPAUSE_STATUS` if absent, or checks that `AGE_AT_FIRST_BIRTH` 
