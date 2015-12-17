@@ -70,3 +70,22 @@ bc_hazard_rate = function( algorithm, population, years
 }
 
 list_algorithms()
+
+
+# Required field table
+
+req_fields = function( ) {
+  all_fields = c()
+  for(alg in bc_risk_algorithms) {
+    all_fields = unique(append(all_fields, alg$req_fields))
+  }
+  tbl = do.call(rbind, Map(function(alg) all_fields %in% alg$req_fields
+                      , bc_risk_algorithms))
+
+  colnames(tbl) <- all_fields
+
+  write.csv(tbl, file="required_fields.csv")
+  print(tbl)
+}
+
+req_fields()
