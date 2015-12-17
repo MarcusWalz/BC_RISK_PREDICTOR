@@ -26,8 +26,27 @@ preprocess_population = function(population) {
     # 2nd set NA's to 0  
     population[is.na(population[,age_column]),age_column] = 0
 
+
     # 3rd set parity to false if AGE_AT_FIRST_BIRTH or AGE_AT_MENOPAUSE are zero
     population[,column] = population[,age_column] == 0
+  }
+
+  # Ensure HYPERPLASIA is NA when BIOPSY is 0!
+  if(all(c("BIOPSY", "HYPERPLASIA") %in% colnames(population))) {
+    old_hyperplasia == population$HYPERPLASIA
+    population$HYPERPLASIA[population$BIOPSY == 0] = NA
+
+    if(!all(old_hypeplasia == population$HYPERPLASIA)) {
+      warning("HYPERPLASIA was non-na where BIOPSY=0")
+    }
+  }
+
+  # Convert old numeric BI-RAD density values into a,b,c,d format
+  if("DENSITY" %in% colnames(population) & is.numeric(population)) {
+    warning('HYPERPLASIA is numeric, should be of type
+            factor("a","b","c","d")')
+    population$DENSITY = as.factor(population$DENSITY)
+    levels(population$DENSITY) <- c("a","b","c","d")
   }
 
   population
