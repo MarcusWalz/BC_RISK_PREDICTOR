@@ -84,6 +84,13 @@ The function `validate_population(population)` ensures that:
     breast biopsy. <code>FALSE</code> if it's known that atypical hyperplasia 
     was not present in any biopsy. <code>NA</code> if patient has had no 
     biopsy or the hyperplasia status is unknown.</dd>
+  <dt>DENSITY</dt>
+  <dd>BI-RADS breast composition category. <code>"a"</code> being mostly fatty
+    and <code>"d"</code> being extremly dense. Either
+    <code>"a"</code>, <code>"b"</code>, <code>"c"</code>, or <code>"d"</code>.
+  </dd>
+
+
 
 </dl>
 
