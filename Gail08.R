@@ -1,4 +1,5 @@
-source("GailAlgorithm.R")
+source("AlgorithmUtil.R")
+source("BCRAT.R")
 
 gail_snp_rr = function(avatars) {
   snp = function(snp_name, rr) {
@@ -21,5 +22,8 @@ gail_snp_rr = function(avatars) {
   )
 }
 
-# TODO change to BCRAT
-Gail08 = function(avatars) gail_algorithm(avatars, Gail89, gail_snp_rr)
+Gail08 = function(population, years) {
+  gail_algorithm(population, years, aux_rr=gail_snp_rr)
+}
+
+register_algorithm("Gail08", Gail08, T, T, append(gail_fields, "RACE"))

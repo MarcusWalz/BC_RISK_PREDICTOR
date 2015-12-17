@@ -1,5 +1,6 @@
 # TODO Use Gail model with constants found in BCRAT source code.
 
+source("AlgorithmUtil.R")
 source("GailAlgorithm.R")
 
 
@@ -83,14 +84,8 @@ bcrat_constant_finder = function(RACE,...) {
 }
 
 
-BCRAT = function(population, years) {
-  gail_algorithm(population, years, bcrat_constant_finder)
+BCRAT = function(population, years, aux_rr=NULL) {
+  gail_algorithm(population, years, bcrat_constant_finder, aux_rr=aux_rr)
 }
 
-
-# write.csv(test, file="BCRAT_BENCHMARK.csv")
-# print(test)
-
-# print("hi")
-# cbind(BCRAT(test, c(5)), test$tAR)
-# print("hmm?")
+register_algorithm("BCRAT", BCRAT, T, T, append(gail_fields, "RACE"))

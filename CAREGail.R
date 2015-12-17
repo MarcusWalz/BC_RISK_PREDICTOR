@@ -25,7 +25,7 @@ CAREGail_params = list( hazards = data.frame(cutpoints, h1_star, h2, F, width)
                , cof     = c(0, 0.0815, 0.185, 0.0014, 0.424, 0.0264, -0.114, 0.0485)
                )
 
-print(CAREGail_params)
+# print(CAREGail_params)
 
 CAREGail = function(population, time) {
   # CAREGail has two categories for AGEMEN, not 3 like Gail89, hack to fix:

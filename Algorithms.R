@@ -3,6 +3,9 @@ source("AlgorithmUtil.R") # For algorithm lookup/registation functions
 
 # Source all algorithms here!
 source("Gail89.R")
+source("Gail08.R")
+source("BCRAT.R")
+
 source("CAREGail.R") 
 source("Rosner96.R")
 
@@ -65,3 +68,5 @@ bc_hazard_rate = function( algorithm, population, years
                          , rate_size=10^5, aux_params=list()) {
   bc_expected_incidence(algorithm, population, years, aux_params) / nrow(population) * rate_size
 }
+
+list_algorithms()

@@ -87,5 +87,5 @@ test_data = data.frame(
   , MENOPAUSE_STATUS = T
 )
 
-print(cbind(test_data,Rosner96(test_data, years=c(5,10))))
+# print(cbind(test_data,Rosner96(test_data, years=c(5,10))))
 
