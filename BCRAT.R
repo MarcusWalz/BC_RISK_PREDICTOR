@@ -96,11 +96,12 @@ test  = data.frame(
 , PARITY = c(T, T, T, T, T, F)
 , RACE = c("White", "White", "White", "White", "White", "White")
 , HYPERPLASIA = c(NA,NA,NA,NA, TRUE, FALSE)
-, tAR = c(.018, 0.132, 0.018, 0.006 ,0.016, 0.048)
+, TEST_AR_5 = c(.018, 0.132, 0.018, 0.006 ,0.016, 0.048)
 )
 
 # write.csv(test, file="BCRAT_BENCHMARK.csv")
-
 print(test)
 
-cbind(BCRAT(test, c(5,10)), test$tAR)
+print("hi")
+cbind(BCRAT(test, c(5)), test$tAR)
+print("hmm?")

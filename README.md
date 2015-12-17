@@ -96,7 +96,7 @@ will calculate the 5 and 10 year absolute risk. Additional arguments can
 be provided as long as default values are set.
 
 An algorithm needs to return a matrix or dataframe with named columns. Where `RR` 
-is the patients current relative risk, `AR 5` is the five absolute risk, and `AR 10`
+is the patients current relative risk, `AR_5` is the five absolute risk, and `AR_10`
 is the ten year asolute risk. To prevent R from reducing a matrix to vector
 remember to subset using: `[,,reduce=F]`. Additional columns can be provided.
 
@@ -117,7 +117,7 @@ my_algorithm = function(population, years) {
   ... # let RR be a vector of relative risks and
       # let ARs be a matrix of absolute risks
   # set colnames
-  colnames(ARs) = paste("AR", years)
+  colnames(ARs) = paste("AR", years, sep="_")
   cbind(RR, ARs)
 }
 
@@ -137,7 +137,7 @@ and running:
 
 will produce a table like this:
 
-|     |  RR | AR 5  |    AR 10
+|     |  RR | AR\_5 |   AR\_10
 | --- |---- |------ | --------
 | 1   |  3  |  .30  |      .45
 | 2   |  4  |  .44  |      .65

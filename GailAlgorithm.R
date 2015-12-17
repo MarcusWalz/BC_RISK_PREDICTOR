@@ -182,9 +182,11 @@ gail_algorithm = function( avatars              # DF of avatars
 
   # calculate the relative risks 
   relative_risks = gail_rr(avatars, fit) * aux_rr 
-  absolute_risks = t(mapply(
+  absolute_risks = as.matrix(mapply(
     function(i, AGE, RR_LT_50, RR_GTE_50) {
       if(is.function(fit)) {
+        # single row fetching really slows things down
+        # can't think of a better way 
         fit = do.call(fit, as.list(avatars[i,]))
       }
       gail_relative_risk_to_absolute_risk(
@@ -195,11 +197,13 @@ gail_algorithm = function( avatars              # DF of avatars
       , fit$hazards
       )
     }, 1:nrow(avatars), avatars$AGE,
-      relative_risks[,"RR_LT_50"], relative_risks[,"RR_GTE_50"] )
-  )
+      relative_risks[,"RR_LT_50"], relative_risks[,"RR_GTE_50"]))
 
-  absolute_risks = as.matrix(absolute_risks)
-  colnames(absolute_risks) = paste("AR", years)
+  if(length(years) > 1) {
+    absolute_risks = t(absolute_risks)
+  }
+  colnames(absolute_risks) = paste("AR", years, sep="_")
+
 
   cbind(relative_risks, absolute_risks)
 
