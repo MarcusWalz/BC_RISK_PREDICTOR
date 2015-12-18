@@ -75,6 +75,7 @@ colnames(Fs) = cols
 
 
 bcrat_constant_finder = function(RACE,...) {
+  RACE=as.character(RACE)
   h1_star = h1_stars[,RACE]
   h2      = h2s[,RACE]
   F       = Fs[ifelse(cutpoints < 50, 1, 2), RACE]

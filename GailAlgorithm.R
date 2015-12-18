@@ -45,8 +45,8 @@ gail_rr = function(avatars, fit = Gail89){
   # if we have fit finder, run avatars one-by-one
   if(is.function(fit)) {
     rrs = t(mapply(function(i) {
-      fit = do.call(fit, as.list(avatars[i,]))
-      gail_rr(avatars[i,], fit)
+      my_fit = do.call(fit, as.list(avatars[i,]))
+      gail_rr(avatars[i,], my_fit)
     }, 1:nrow(avatars)))
 
     colnames(rrs) <- c("RR", "RR_LT_50", "RR_GTE_50")

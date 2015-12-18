@@ -7,4 +7,8 @@ source("Utils.R")
 # import test data via google docs
 test = read.csv("https://docs.google.com/spreadsheets/d/1d8TWYED1xy5kIxTgrix6u2dtdGbKzmXEk9qmAI0Et9U/pub?gid=959123307&single=true&output=csv")
 
+print(test)
+
+print(test$HYPERPLASIA == TRUE)
+
 compare_output(BCRAT, test, 5)
