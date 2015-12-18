@@ -86,6 +86,14 @@ bcrat_constant_finder = function(RACE,...) {
 
 
 BCRAT = function(population, years, aux_rr=NULL) {
+  # AGE_AT_MENARHE only has two categories for Black
+  population$AGE_AT_MENARCHE = 
+    ifelse(population$RACE == "Black"
+      , ifelse(population$AGE_AT_MENARCHE < 12
+              , 12
+              , population$AGE_AT_MENARCHE)
+      , population$AGE_AT_MENARCHE)
+   
   gail_algorithm(population, years, bcrat_constant_finder, aux_rr=aux_rr)
 }
 
