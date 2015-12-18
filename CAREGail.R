@@ -29,7 +29,7 @@ CAREGail_params = list( hazards = data.frame(cutpoints, h1_star, h2, F, width)
 
 CAREGail = function(population, time) {
   # CAREGail has two categories for AGEMEN, not 3 like Gail89, hack to fix:
-  population$AGE_AT_MENARCHE = ifelse(population$AGE_AT_MENARCHE =< 14, 13, 14)  
+  population$AGE_AT_MENARCHE = ifelse(population$AGE_AT_MENARCHE <= 14, 13, 14)  
   gail_algorithm(population, time, CAREGail_params)
 }
 
