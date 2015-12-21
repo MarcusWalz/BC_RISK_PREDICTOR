@@ -1,3 +1,5 @@
+source("Utils.R") 
+
 source("../Gail89.R", chdir=T)
 
 valid_names =list(year=c(10,20,30), rr=c(1,2,5,10,20,30), age=c(20,30,40,50))
@@ -73,3 +75,18 @@ print("mean error")
 print(mean(comp-reported))
 print("max error")
 print(max(comp-reported))
+
+# Highest and lowest RRs and  example from Gail89 pg1180
+# ignoring hypeplasia. 
+test_data = data.frame(
+  AGE=c(50, 30, 54)
+, AGE_AT_MENARCHE = c(8, 15, 15)
+, AGE_AT_FIRST_BIRTH = c(31, 19, 0)
+, PARITY = c(TRUE, TRUE, FALSE)
+, BIOPSY=c(2, 0, 1)
+, FIRST_DEGREE_RELATIVES = c(2, 0, 1)
+, TEST_RR = c(1.207*1.620*4.169, 1, 3.508)
+)
+
+print(test_data)
+compare_output(Gail89, test_data, 5)

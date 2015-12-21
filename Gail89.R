@@ -48,6 +48,6 @@ gail89 =
       , cof     = c(-0.74948, 0.09401, 0.52926, 0.21863, 0.95830, 0.01081, -0.28804, -0.19081)
       )
 
-Gail89 = function(avatars, years) { gail_algorithm(avatars, years, gail89) } 
+Gail89 = function(population, years) { gail_algorithm(population, years, gail89) } 
 
 register_algorithm("Gail89", Gail89, T, T, gail_fields)

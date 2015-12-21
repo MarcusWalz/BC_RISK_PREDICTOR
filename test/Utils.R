@@ -3,8 +3,10 @@ source("../Algorithms.R", chdir=T)
 # Compares output to values in dataframe. Numeric only!
 # TEST_X column input dataframe will be compared to the
 # column X in the output dataframe.
+# 
+# digits = number of decimal places to round output
 
-compare_output = function(algorithm, df, years, aux_params = list()) {
+compare_output = function(algorithm, df, years = 5, digits=3, aux_params = list()) {
   if(is.function(algorithm)) {
     output =
       do.call(algorithm
@@ -23,7 +25,7 @@ compare_output = function(algorithm, df, years, aux_params = list()) {
     out_c = output[,column]
 
     print(column)
-    compare = data.frame(validation = test_c, output = out_c)
+    compare = data.frame(validation = test_c, output = round(out_c,digits))
     compare$diff = compare$validation - compare$output
     print(compare)
 
