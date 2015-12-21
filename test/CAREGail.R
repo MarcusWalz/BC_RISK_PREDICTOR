@@ -1,3 +1,5 @@
+source("Utils.R")
+
 source("../CAREGail.R", chdir=T)
 
 valid_names = list(year = c(5, 10, 20, 30), rr = c(1, 2, 5, 10), age = c(20,30,40,50))
@@ -55,7 +57,7 @@ dimnames(gail_vals)=valid_names
 reported = gail_vals
 rownames(reported) = c("5", "10", "20", "30")
 
-print("Reported in Gail89 (percent)")
+print("Reported in CAREGail (percent)")
 print(reported)
 print("Algorithm reported")
 print(comp)
@@ -68,3 +70,17 @@ print("max error")
 print(max(abs(comp-reported)))
 
 
+# Highest and lowest RRs and  example from CAREGAIL
+# ignoring hypeplasia. 
+test_data = data.frame(
+  AGE=c(25, 30, 54)
+, AGE_AT_MENARCHE = c(8, 15, 9)
+, AGE_AT_FIRST_BIRTH = c(19, 19, 19)
+, PARITY = c(TRUE, TRUE, TRUE)
+, BIOPSY=c(2, 0, 1)
+, FIRST_DEGREE_RELATIVES = c(2, 0, 1)
+, TEST_RR = c(1.31*1.44*2.59, 1, 1.72)
+)
+
+print(test_data)
+compare_output(CAREGail, test_data, 5)
