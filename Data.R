@@ -7,7 +7,7 @@ preprocess_population = function(population) {
     age_column = ifelse(column == "PARITY", "AGE_AT_FIRST_BIRTH", "AGE_AT_MENOPAUSE")
 
     # Check to make sure column is actually present.
-    if(! (age_column %in% colnames(population))) {
+    if(!(age_column %in% colnames(population))) {
       warning(paste(column, "not in input population."))
       next
     }
@@ -28,7 +28,7 @@ preprocess_population = function(population) {
 
 
     # 3rd set parity to false if AGE_AT_FIRST_BIRTH or AGE_AT_MENOPAUSE are zero
-    population[,column] = population[,age_column] == 0
+    population[,column] = population[,age_column] != 0
   }
 
   # Ensure HYPERPLASIA is NA when BIOPSY is 0!
@@ -113,6 +113,60 @@ AGE_AT_MENARCHE_COLUMN =
       }
       )
 
+BIOPSY_COLUMN =
+  list( column = "BIOPSY"
+        , description = "BIOPSY. Numeric or 0, 1, >=2"
+        , valid = function(BIOPSY) {
+            all(is.numeric(BIOPSY ) | BIOPSY == "0" | BIOPSY == "1" | BIOPSY == ">=2")
+        }
+        , risk = function(BIOPSY) {
+          ifelse(BIOPSY == ">=2", "high", "low")
+        }
+  )
+
+HYPERPLASIA_COLUMN = 
+  list( column = "HYPERPLASIA"
+        , description = "HYPERPLASIA. true, false, NA"
+        , valid = function(HYPERPLASIA) {
+          all(is.na(HYPERPLASIA) | isTRUE(HYPERPLASIA) | identical(HYPERPLASIA, FALSE))
+        }, risk = function(HYPERPLASIA) {
+          ifelse(isTRUE(HYPERPLASIA), "high", "low")
+        }
+  )
+
+DENSITY_COLUMN =
+  list( column = "DENSITY"
+        , description = "DENSITY. a, b, c, d"
+        , valid = function(DENSITY) {
+            all(DENSITY == "a" | DENSITY == "b" | DENSITY == "c"  | DENSITY == "d")
+          }
+          , risk = function(DENSITY) {
+            ifelse(DENSITY == "d", "high", "low")
+          }
+  )
+
+FIRST_DEGREE_RELATIVES_COLUMN =
+  list( column = "FIRST_DEGREE_RELATIVES"
+        , description = "FIRST_DEGREE_RELATIVES. numeric"
+        , valid = function(FIRST_DEGREE_RELATIVES) {
+          all(is.numeric(FIRST_DEGREE_RELATIVES) && FIRST_DEGREE_RELATIVES >= 0)
+        }
+        , risk = function(FIRST_DEGREE_RELATIVES) {
+          ifelse(FIRST_DEGREE_RELATIVES > 1 , "high", "low")
+        }
+  )
+
+AGE_AT_FIRST_BIRTH_COLUMN = 
+  list( column = "AGE_AT_FIRST_BIRTH"
+        , description = "Age at first birth. Numeric."
+        , valid = function(AGE_AT_FIRST_BIRTH) {
+          is.numeric(AGE_AT_FIRST_BIRTH) && all(AGE_AT_FIRST_BIRTH >= 0)
+        }
+        , risk = function(AGE_AT_FIRST_BIRTH) {
+          ifelse(AGE_AT_FIRST_BIRTH > 35, "high", "low")
+        }
+  )
+
 AGE_AT_MENOPAUSE_COLUMN = 
   list( column = "AGE_AT_MENOPAUSE"
       , description = "Age at menopause. Numeric"
@@ -132,6 +186,38 @@ AGE_AND_AGE_AT_MENARCHE_COLUMN =
         all(AGE > AGE_AT_MENARCHE) 
       }
       )
+
+AGE_AND_AGE_AT_FIRST_BIRTH =
+  list( column = c("AGE", "AGE_AT_FIRST_BIRTH")
+        , description = "AGE should be greater than or equal to AGE_AT_FIRST_BIRTH."
+        , valid = function(AGE, AGE_AT_FIRST_BIRTH) {
+          all(AGE >= AGE_AT_FIRST_BIRTH) 
+        }
+  )
+
+AGE_AT_FIRST_BIRTH_AND_AGE_AT_MENARCHE_COLUMN =
+  list( column = c("AGE_AT_FIRST_BIRTH", "AGE_AT_MENARCHE")
+        , description = "AGE_AT_FIRST_BIRTH should be greater than AGE_AT_MENARCHE."
+        , valid = function(AGE_AT_FIRST_BIRTH, AGE_AT_MENARCHE) {
+          all(AGE_AT_FIRST_BIRTH > AGE_AT_MENARCHE | AGE_AT_FIRST_BIRTH == 0) 
+        }
+  )
+
+AGE_AND_AGE_AT_MENOPAUSE =
+  list( column = c("AGE", "AGE_AT_MENOPAUSE")
+        , description = "AGE should be greater than or equal to AGE_AT_MENOPAUSE"
+        , valid = function(AGE, AGE_AT_MENOPAUSE) {
+          all(AGE >= AGE_AT_MENOPAUSE) 
+        }
+  )
+
+AGE_AT_MENOPAUSE_AND_AGE_AT_MENARCHE_COLUMN =
+  list( column = c("AGE_AT_MENOPAUSE", "AGE_AT_MENARCHE")
+        , description = "AGE_AT_MENOPAUSE should be greater than AGE_AT_MENARCHE."
+        , valid = function(AGE_AT_MENOPAUSE, AGE_AT_MENARCHE) {
+          all(AGE_AT_MENOPAUSE > AGE_AT_MENARCHE | AGE_AT_MENOPAUSE == 0) 
+        }
+  )
 
 # filter null values in a column
 filter_null = function(l) {
@@ -189,14 +275,38 @@ RACE_FACTOR = factor(c("Asian", "Black", "Hispanic", "White"))
 
 RACE_COLUMN = factor_to_column("RACE", RACE_FACTOR)
 
+Validate_to_rs_column = function(name, discriptions) {
+  filter_null(
+    list( column = name
+          , description = discriptions
+          , valid = function(column) {
+            all( column == "0" | column == "1" | column == "2") 
+          }
+    )
+  )
+}
+
+
+rs2981582_COLUMN = Validate_to_rs_column("rs2981582", "rs2981582. 0, 1, 2")
+rs3803662_COLUMN = Validate_to_rs_column("rs3803662", "rs3803662. 0, 1, 2")
+rs889312_COLUMN  = Validate_to_rs_column("rs889312", "rs889312. 0, 1, 2")
+rs3817198_COLUMN = Validate_to_rs_column("rs3817198", "rs3817198. 0, 1, 2")
+rs13281615_COLUMN = Validate_to_rs_column("rs13281615", "rs13281615. 0, 1, 2")
+rs13387042_COLUMN = Validate_to_rs_column("rs13387042", "rs13387042. 0, 1, 2")
+rs1045485_COLUMN = Validate_to_rs_column("rs1045485", "rs1045485. 0, 1, 2")
+
+
 BC_RISK_COLUMNS =
   list( AGE_COLUMN
       , AGE_AT_MENARCHE_COLUMN
+      , AGE_AT_FIRST_BIRTH
       , AGE_AT_MENOPAUSE_COLUMN
       , AGE_AND_AGE_AT_MENARCHE_COLUMN
       , RACE_COLUMN
       , PARITY_COLUMN
       , MENOPAUSE_STATUS_COLUMN
+      , Biopsy_COLUMN
+      , HYPERPLASIA_COLUMN
       )
 
 BC_RISK_COLUMN_DESC = 
@@ -266,7 +376,8 @@ random_population = function(n = 1000) {
               , PARITY
               , MENOPAUSE_STATUS
               , RACE
-              , BIOPSY )
+              , BIOPSY
+              , HYPERPLASIA)
     )
 }
 
